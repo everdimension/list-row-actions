@@ -364,9 +364,6 @@ function App() {
       <section className="messenger" aria-label="Conversation list demo">
         <header className="messenger-header">
           <div className="app-heading">
-            <span className="app-logo">
-              <Icon name="plane" />
-            </span>
             <h2>Chats</h2>
             <span className="connection-status">Demo conversations</span>
           </div>
