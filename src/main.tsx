@@ -96,7 +96,7 @@ const initialChats: Chat[] = [
     id: 1,
     name: "Sofia Chen",
     initials: "SC",
-    color: "peach",
+    color: "orange",
     preview: "That little place on the corner? ☕",
     time: "12:42",
     unread: 2,
@@ -106,7 +106,7 @@ const initialChats: Chat[] = [
     id: 2,
     name: "The design corner",
     initials: "✳",
-    color: "violet",
+    color: "red",
     sender: "Oliver",
     preview: "okay, one more tiny iteration",
     time: "12:38",
@@ -127,7 +127,7 @@ const initialChats: Chat[] = [
     id: 4,
     name: "Weekend people",
     initials: "☀",
-    color: "green",
+    color: "sky",
     sender: "Mia",
     preview: "Photo",
     time: "11:56",
@@ -138,7 +138,7 @@ const initialChats: Chat[] = [
     id: 5,
     name: "Nina Park",
     initials: "NP",
-    color: "rose",
+    color: "pink",
     preview: "This is exactly what I had in mind",
     time: "11:30",
     sent: true,
@@ -147,7 +147,7 @@ const initialChats: Chat[] = [
     id: 6,
     name: "Product notes",
     initials: "↗",
-    color: "cyan",
+    color: "amber",
     preview: "Small details, big difference.",
     time: "10:48",
     unread: 1,
@@ -157,7 +157,7 @@ const initialChats: Chat[] = [
     id: 7,
     name: "Leo Rivera",
     initials: "LR",
-    color: "gold",
+    color: "slate",
     preview: "Voice message · 0:18",
     time: "10:12",
   },
@@ -165,7 +165,7 @@ const initialChats: Chat[] = [
     id: 8,
     name: "Sunday dinner",
     initials: "🍋",
-    color: "lemon",
+    color: "yellow",
     sender: "You",
     preview: "I’ll bring something sweet",
     time: "Yesterday",
@@ -335,37 +335,37 @@ function SwipeRow({
               flexShrink: "0",
               display: "grid",
               placeItems: "center",
-              color: "white",
+              color: "#202124",
               borderRadius: "50%",
               fontSize:
-                chat.color === "violet"
+                chat.color === "red"
                   ? "35px"
-                  : chat.color === "green"
+                  : chat.color === "sky"
                     ? "32px"
-                    : chat.color === "cyan"
+                    : chat.color === "amber"
                       ? "33px"
-                      : chat.color === "lemon"
+                      : chat.color === "yellow"
                         ? "26px"
                         : "17px",
               fontWeight: "550",
               letterSpacing: "-0.5px",
               background:
-                chat.color === "peach"
-                  ? "linear-gradient(145deg, #efc0a4, #d8917b)"
-                  : chat.color === "violet"
-                    ? "linear-gradient(145deg, #b0a5ed, #8070c9)"
+                chat.color === "orange"
+                  ? "linear-gradient(145deg, #f3b5ab, #eea399)"
+                  : chat.color === "red"
+                    ? "linear-gradient(145deg, #f3ada9, #e89a96)"
                     : chat.color === "blue"
-                      ? "linear-gradient(145deg, #89b9e1, #5e89b7)"
-                      : chat.color === "green"
-                        ? "linear-gradient(145deg, #a0cdb4, #68a387)"
-                        : chat.color === "rose"
-                          ? "linear-gradient(145deg, #e8b1c1, #c47f9a)"
-                          : chat.color === "cyan"
-                            ? "linear-gradient(145deg, #93ccda, #5b9eaf)"
-                            : chat.color === "gold"
-                              ? "linear-gradient(145deg, #dcc092, #b29874)"
-                              : chat.color === "lemon"
-                                ? "#f4e9b8"
+                      ? "linear-gradient(145deg, #abc5fa, #93b3f2)"
+                      : chat.color === "sky"
+                        ? "linear-gradient(145deg, #a8d7ec, #96c9e0)"
+                        : chat.color === "pink"
+                          ? "linear-gradient(145deg, #e7bbd5, #dba7c8)"
+                          : chat.color === "amber"
+                            ? "linear-gradient(145deg, #f8dfa5, #efd18b)"
+                            : chat.color === "slate"
+                              ? "linear-gradient(145deg, #bdc6d2, #a9b5c5)"
+                              : chat.color === "yellow"
+                                ? "linear-gradient(145deg, #f9e9b1, #f3df9c)"
                                 : undefined,
             })}
             aria-hidden="true"
@@ -379,7 +379,7 @@ function SwipeRow({
                   bottom: "1px",
                   width: "12px",
                   height: "12px",
-                  background: "#62bd86",
+                  background: "var(--online)",
                   border: "2.5px solid var(--surface)",
                   borderRadius: "50%",
                 })}
@@ -413,7 +413,7 @@ function SwipeRow({
                   className={css({
                     width: "12px",
                     height: "12px",
-                    color: "#b2bac4",
+                    color: "var(--icon-muted)",
                     flexShrink: "0",
                   })}
                 />
@@ -424,7 +424,7 @@ function SwipeRow({
                   display: "flex",
                   alignItems: "center",
                   gap: "4px",
-                  color: "#a4acb7",
+                  color: "var(--text-muted)",
                   fontSize: "9px",
                   whiteSpace: "nowrap",
                 })}
@@ -435,7 +435,7 @@ function SwipeRow({
                     className={css({
                       width: "15px",
                       height: "15px",
-                      color: "#56afd9",
+                      color: "var(--accent)",
                     })}
                   />
                 )}
@@ -456,12 +456,12 @@ function SwipeRow({
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                   fontSize: "11px",
-                  color: "#929ca8",
+                  color: "var(--text-secondary)",
                   lineHeight: "18px",
                 })}
               >
                 {chat.sender && (
-                  <span className={css({ color: "#5a6879" })}>
+                  <span className={css({ color: "var(--text-color)" })}>
                     {chat.sender}:{" "}
                   </span>
                 )}
@@ -478,8 +478,12 @@ function SwipeRow({
                     minWidth: "18px",
                     padding: "0 5px",
                     borderRadius: "10px",
-                    background: chat.muted ? "#c2cad3" : "#43a7dc",
-                    color: "white",
+                    background: chat.muted
+                      ? "var(--count-bg)"
+                      : "var(--accent-solid)",
+                    color: chat.muted
+                      ? "var(--text-secondary)"
+                      : "var(--accent-foreground)",
                     fontSize: "10px",
                     fontWeight: "600",
                   })}
@@ -493,7 +497,7 @@ function SwipeRow({
                     width: "13px",
                     height: "13px",
                     marginLeft: "auto",
-                    color: "#b6c0cb",
+                    color: "var(--icon-muted)",
                     flexShrink: "0",
                   })}
                 />
@@ -505,7 +509,7 @@ function SwipeRow({
           ref={actionsRef}
           className={css({
             display: "flex",
-            flex: "0 0 160px",
+            flex: variant === "circular" ? "0 0 140px" : "0 0 160px",
             alignSelf: "stretch",
             scrollSnapAlign: "end",
             alignItems: variant === "circular" ? "center" : undefined,
@@ -518,22 +522,22 @@ function SwipeRow({
           <button
             className={css({
               display: "flex",
-              flex: variant === "circular" ? "0 0 60px" : "1",
-              height: variant === "circular" ? "60px" : undefined,
+              flex: variant === "circular" ? "0 0 50px" : "1",
+              height: variant === "circular" ? "50px" : undefined,
               borderRadius: variant === "circular" ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
               border: "0",
               padding: "0",
-              color: "white",
-              background: "#9299c6",
+              color: "var(--secondary-action-foreground)",
+              background: "var(--secondary-action)",
               transform: variant === "circular" ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
-                outlineColor: "white",
+                outlineColor: "var(--secondary-action-foreground)",
               },
             })}
             aria-label={`${chat.muted ? "Unmute" : "Mute"} ${chat.name}`}
@@ -576,22 +580,22 @@ function SwipeRow({
           <button
             className={css({
               display: "flex",
-              flex: variant === "circular" ? "0 0 60px" : "1",
-              height: variant === "circular" ? "60px" : undefined,
+              flex: variant === "circular" ? "0 0 50px" : "1",
+              height: variant === "circular" ? "50px" : undefined,
               borderRadius: variant === "circular" ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
               border: "0",
               padding: "0",
-              color: "white",
-              background: "#469ed3",
+              color: "var(--accent-foreground)",
+              background: "var(--accent-solid)",
               transform: variant === "circular" ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
-                outlineColor: "white",
+                outlineColor: "var(--accent-foreground)",
               },
             })}
             aria-label={`Archive ${chat.name}`}
@@ -688,7 +692,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           border: "1px solid var(--border-color)",
           borderRadius: "19px",
           overflow: "hidden",
-          boxShadow: "0 16px 45px -20px #2d486b30, 0 2px 5px #263c5003",
+          boxShadow: "var(--card-shadow)",
           "@media (max-width: 520px)": { borderRadius: "16px" },
         })}
         aria-label={
@@ -725,7 +729,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               className={css({
                 marginLeft: "auto",
                 fontSize: "10px",
-                color: "#9aa4ae",
+                color: "var(--text-muted)",
                 "@media (max-width: 520px)": { fontSize: "9px" },
               })}
             >
@@ -742,8 +746,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               borderRadius: "9px",
               padding: "10px 12px",
               background: "var(--control-bg)",
-              color: "#9ba6b1",
-              "&:focus-within": { boxShadow: "0 0 0 2px #299adb55" },
+              color: "var(--text-muted)",
+              "&:focus-within": { boxShadow: "0 0 0 2px var(--focus-ring)" },
             })}
           >
             <Icon
@@ -762,8 +766,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 minWidth: "0",
                 background: "transparent",
                 fontSize: "12px",
-                color: "#394656",
-                _placeholder: { color: "#96a0ac" },
+                color: "var(--text-color)",
+                _placeholder: { color: "var(--text-muted)" },
               })}
               placeholder="Search conversations"
               aria-label="Search conversations"
@@ -772,7 +776,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             />
             <span
               className={css({
-                color: "#bbc2ca",
+                color: "var(--icon-muted)",
                 fontSize: "17px",
                 lineHeight: "1",
               })}
@@ -792,13 +796,13 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 alignItems: "center",
                 gap: "6px",
                 padding: "8px 1px 14px",
-                color: "#98a0ab",
+                color: "var(--text-secondary)",
                 border: "0",
                 background: "transparent",
                 fontSize: "12px",
                 fontWeight: "600",
                 '&[aria-pressed="true"]': {
-                  color: "#2996d0",
+                  color: "var(--accent)",
                   _after: {
                     content: '""',
                     position: "absolute",
@@ -806,7 +810,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                     left: "0",
                     right: "0",
                     height: "3px",
-                    background: "#299bd5",
+                    background: "var(--accent)",
                     borderRadius: "3px 3px 0 0",
                   },
                 },
@@ -818,11 +822,11 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 className={css({
                   fontSize: "9px",
                   background: "var(--count-bg)",
-                  color: "#919ba8",
+                  color: "var(--text-secondary)",
                   padding: "2px 5px",
                   borderRadius: "8px",
                   'button[aria-pressed="true"] &': {
-                    color: "#2797d1",
+                    color: "var(--accent)",
                     background: "var(--count-active-bg)",
                   },
                 })}
@@ -838,13 +842,13 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 alignItems: "center",
                 gap: "6px",
                 padding: "8px 1px 14px",
-                color: "#98a0ab",
+                color: "var(--text-secondary)",
                 border: "0",
                 background: "transparent",
                 fontSize: "12px",
                 fontWeight: "600",
                 '&[aria-pressed="true"]': {
-                  color: "#2996d0",
+                  color: "var(--accent)",
                   _after: {
                     content: '""',
                     position: "absolute",
@@ -852,7 +856,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                     left: "0",
                     right: "0",
                     height: "3px",
-                    background: "#299bd5",
+                    background: "var(--accent)",
                     borderRadius: "3px 3px 0 0",
                   },
                 },
@@ -864,11 +868,11 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 className={css({
                   fontSize: "9px",
                   background: "var(--count-bg)",
-                  color: "#919ba8",
+                  color: "var(--text-secondary)",
                   padding: "2px 5px",
                   borderRadius: "8px",
                   'button[aria-pressed="true"] &': {
-                    color: "#2797d1",
+                    color: "var(--accent)",
                     background: "var(--count-active-bg)",
                   },
                 })}
@@ -913,7 +917,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               className={css({
                 padding: "60px 20px",
                 textAlign: "center",
-                color: "#929ca8",
+                color: "var(--text-secondary)",
                 fontSize: "13px",
               })}
             >
@@ -931,7 +935,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             background: "var(--surface-subtle)",
             borderTop: "1px solid var(--separator-color)",
             fontSize: "9px",
-            color: "#9aa6b4",
+            color: "var(--text-muted)",
             "@media (max-width: 520px)": { fontSize: "8px", gap: "4px" },
           })}
         >
@@ -944,7 +948,9 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             })}
           />
           <span>Swipe left for mute & archive</span>
-          <span className={css({ padding: "0 2px", color: "#c3ccd5" })}>·</span>
+          <span className={css({ padding: "0 2px", color: "var(--icon-muted)" })}>
+            ·
+          </span>
           <span>Swipe right to close</span>
         </footer>
         {notice && (
@@ -960,10 +966,10 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               gap: "12px",
               padding: "13px 16px",
               borderRadius: "10px",
-              background: "#263647",
+              background: "var(--toast-bg)",
               color: "white",
               fontSize: "12px",
-              boxShadow: "0 4px 20px #172a4226",
+              boxShadow: "0 4px 20px #00000026",
               animation: "toast-in 180ms ease-out",
               "@media (prefers-reduced-motion: reduce)": { animation: "none" },
             })}
@@ -976,7 +982,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                   border: "0",
                   padding: "0",
                   background: "transparent",
-                  color: "#89cef4",
+                  color: "var(--toast-link)",
                   fontWeight: "600",
                   fontSize: "12px",
                 })}
@@ -1000,7 +1006,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           gap: "12px",
           margin: "17px 3px 0",
           fontSize: "10px",
-          color: "#97a2af",
+          color: "var(--text-muted)",
           "@media (max-width: 520px)": { fontSize: "9px", gap: "5px" },
         })}
       >
@@ -1022,8 +1028,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               display: "flex",
               alignItems: "center",
               gap: "5px",
-              color: "#398fbf",
-              "&:hover": { color: "#246e97" },
+              color: "var(--accent)",
+              "&:hover": { color: "var(--accent-hover)" },
             })}
             onClick={() => {
               const row = listRef.current?.querySelector("[data-chat-id]");
@@ -1045,8 +1051,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               border: "0",
               background: "transparent",
               fontSize: "10px",
-              color: "#9da6b2",
-              "&:hover": { color: "#246e97" },
+              color: "var(--text-muted)",
+              "&:hover": { color: "var(--accent-hover)" },
             })}
             onClick={reset}
           >
@@ -1084,7 +1090,7 @@ function App() {
             display: "inline-flex",
             alignItems: "center",
             gap: "7px",
-            color: "#83909e",
+            color: "var(--text-secondary)",
             fontSize: "9px",
             fontWeight: "650",
             letterSpacing: "1.7px",
@@ -1095,8 +1101,8 @@ function App() {
               width: "5px",
               height: "5px",
               borderRadius: "50%",
-              background: "#48a9d7",
-              boxShadow: "0 0 0 3px #e4edf4",
+              background: "var(--accent)",
+              boxShadow: "0 0 0 3px var(--count-active-bg)",
             })}
           />
           WEB DEMO
@@ -1118,7 +1124,7 @@ function App() {
           className={css({
             margin: "0",
             fontSize: "12px",
-            color: "#8a94a1",
+            color: "var(--text-secondary)",
             "@media (max-width: 520px)": { fontSize: "11px" },
           })}
         >
@@ -1136,7 +1142,7 @@ function App() {
           justifyContent: "center",
           gap: "9px",
           marginTop: "31px",
-          color: "#aab4bf",
+          color: "var(--text-muted)",
           fontSize: "8px",
           letterSpacing: "1.15px",
           "@media (max-width: 520px)": {
@@ -1146,9 +1152,9 @@ function App() {
           },
         })}
       >
-        NATIVE SCROLL <span className={css({ color: "#bdc5ce" })}>+</span> CSS
-        SCROLL SNAP <span className={css({ color: "#bdc5ce" })}>·</span> NO
-        GESTURE LIBRARY
+        NATIVE SCROLL <span className={css({ color: "var(--icon-muted)" })}>+</span>{" "}
+        CSS SCROLL SNAP <span className={css({ color: "var(--icon-muted)" })}>·</span>{" "}
+        NO GESTURE LIBRARY
       </footer>
     </main>
   );

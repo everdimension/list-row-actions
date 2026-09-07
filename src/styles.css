@@ -5,17 +5,31 @@
 @layer tokens {
   :root {
     color-scheme: light dark;
-    --page-bg: #f3f5f8;
-    --text-color: #202833;
+    --page-bg: #f1f3f4;
+    --text-color: #202124;
+    --text-secondary: #5f6368;
+    --text-muted: #70757a;
+    --icon-muted: #9aa0a6;
     --surface: white;
-    --surface-subtle: #fafbfd;
-    --border-color: #e3e8ee;
-    --separator-color: #edf0f4;
-    --row-separator-color: #f0f2f5;
-    --reveal-color: 243, 245, 248;
-    --control-bg: #f2f4f7;
-    --count-bg: #edf0f3;
-    --count-active-bg: #e5f3fb;
+    --surface-subtle: #f8f9fa;
+    --border-color: #dadce0;
+    --separator-color: #e8eaed;
+    --row-separator-color: #e8eaed;
+    --reveal-color: 241, 243, 244;
+    --control-bg: #f1f3f4;
+    --count-bg: #e8eaed;
+    --count-active-bg: #e8f0fe;
+    --accent: #1967d2;
+    --accent-hover: #174ea6;
+    --accent-solid: #1967d2;
+    --accent-foreground: white;
+    --secondary-action: #e8f0fe;
+    --secondary-action-foreground: #1967d2;
+    --online: #34a853;
+    --focus-ring: #1967d240;
+    --card-shadow: 0 1px 3px #2021240a;
+    --toast-bg: #303134;
+    --toast-link: #93b3f2;
     font-family:
       "DM Sans",
       -apple-system,
@@ -30,17 +44,30 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --page-bg: #151a20;
-      --text-color: #edf1f5;
-      --surface: #202731;
-      --surface-subtle: #1b222b;
-      --border-color: #303a46;
-      --separator-color: #2b3540;
-      --row-separator-color: #303943;
-      --reveal-color: 34, 42, 52;
-      --control-bg: #2a333e;
-      --count-bg: #303a46;
-      --count-active-bg: #244c66;
+      --page-bg: #171819;
+      --text-color: #f1f3f4;
+      --text-secondary: #bdc1c6;
+      --text-muted: #9aa0a6;
+      --icon-muted: #80868b;
+      --surface: #202124;
+      --surface-subtle: #202124;
+      --border-color: #5f6368;
+      --separator-color: #3c4043;
+      --row-separator-color: #3c4043;
+      --reveal-color: 48, 49, 52;
+      --control-bg: #303134;
+      --count-bg: #3c4043;
+      --count-active-bg: #35415a;
+      --accent: #93b3f2;
+      --accent-hover: #b5ccf8;
+      --accent-solid: #93b3f2;
+      --accent-foreground: #202124;
+      --secondary-action: #303134;
+      --secondary-action-foreground: #93b3f2;
+      --online: #93c99e;
+      --focus-ring: #93b3f266;
+      --card-shadow: none;
+      --toast-bg: #3c4043;
     }
   }
 }
@@ -67,7 +94,7 @@
 
   button:focus-visible,
   input:focus-visible {
-    outline: 2px solid #299adb;
+    outline: 2px solid var(--accent);
     outline-offset: 3px;
   }
 }
