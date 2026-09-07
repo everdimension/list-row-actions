@@ -300,8 +300,8 @@ function SwipeRow({
             padding: "15px 20px",
             background:
               variant === "circular"
-                ? "rgba(243, 245, 248, var(--reveal))"
-                : "white",
+                ? "rgba(var(--reveal-color), var(--reveal))"
+                : "var(--surface)",
             borderRadius: "16px",
             overflow: variant === "circular" ? "hidden" : undefined,
             scrollSnapAlign: "start",
@@ -314,7 +314,7 @@ function SwipeRow({
               bottom: "0",
               right: "0",
               height: "1px",
-              background: "#f0f2f5",
+              background: "var(--row-separator-color)",
               opacity:
                 variant === "circular" ? "calc(1 - var(--reveal))" : undefined,
             },
@@ -380,7 +380,7 @@ function SwipeRow({
                   width: "12px",
                   height: "12px",
                   background: "#62bd86",
-                  border: "2.5px solid white",
+                  border: "2.5px solid var(--surface)",
                   borderRadius: "50%",
                 })}
               />
@@ -684,8 +684,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
       <section
         className={css({
           position: "relative",
-          background: "white",
-          border: "1px solid #e3e8ee",
+          background: "var(--surface)",
+          border: "1px solid var(--border-color)",
           borderRadius: "19px",
           overflow: "hidden",
           boxShadow: "0 16px 45px -20px #2d486b30, 0 2px 5px #263c5003",
@@ -741,7 +741,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               gap: "9px",
               borderRadius: "9px",
               padding: "10px 12px",
-              background: "#f2f4f7",
+              background: "var(--control-bg)",
               color: "#9ba6b1",
               "&:focus-within": { boxShadow: "0 0 0 2px #299adb55" },
             })}
@@ -817,13 +817,13 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               <span
                 className={css({
                   fontSize: "9px",
-                  background: "#edf0f3",
+                  background: "var(--count-bg)",
                   color: "#919ba8",
                   padding: "2px 5px",
                   borderRadius: "8px",
                   'button[aria-pressed="true"] &': {
                     color: "#2797d1",
-                    background: "#e5f3fb",
+                    background: "var(--count-active-bg)",
                   },
                 })}
               >
@@ -863,13 +863,13 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               <span
                 className={css({
                   fontSize: "9px",
-                  background: "#edf0f3",
+                  background: "var(--count-bg)",
                   color: "#919ba8",
                   padding: "2px 5px",
                   borderRadius: "8px",
                   'button[aria-pressed="true"] &': {
                     color: "#2797d1",
-                    background: "#e5f3fb",
+                    background: "var(--count-active-bg)",
                   },
                 })}
               >
@@ -884,7 +884,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             listStyle: "none",
             padding: "0",
             margin: "0",
-            borderTop: "1px solid #edf0f4",
+            borderTop: "1px solid var(--separator-color)",
           })}
           ref={listRef}
         >
@@ -928,8 +928,8 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             justifyContent: "center",
             gap: "6px",
             padding: "15px 10px",
-            background: "#fafbfd",
-            borderTop: "1px solid #edf0f4",
+            background: "var(--surface-subtle)",
+            borderTop: "1px solid var(--separator-color)",
             fontSize: "9px",
             color: "#9aa6b4",
             "@media (max-width: 520px)": { fontSize: "8px", gap: "4px" },
