@@ -5,7 +5,6 @@ import "./styles.css";
 
 type IconName =
   | "plane"
-  | "search"
   | "mute"
   | "bell"
   | "archive"
@@ -23,12 +22,6 @@ function Icon({
 }) {
   const paths: Record<IconName, ReactNode> = {
     plane: <path d="m21 3-7 18-4-7-7-4L21 3Zm0 0L10 14" />,
-    search: (
-      <>
-        <circle cx="10.8" cy="10.8" r="6.8" />
-        <path d="m16 16 4.5 4.5" />
-      </>
-    ),
     mute: (
       <>
         <path d="M9.5 4.5A5 5 0 0 1 17 9v4l3 4H8M7 9v4l-3 4M10 21h4M3 3l18 18" />
@@ -105,7 +98,7 @@ const initialChats: Chat[] = [
   {
     id: 2,
     name: "The design corner",
-    initials: "✳",
+    initials: "✳\uFE0E", // Request text presentation so iOS doesn't render a colored emoji.
     color: "red",
     sender: "Oliver",
     preview: "okay, one more tiny iteration",
@@ -126,7 +119,7 @@ const initialChats: Chat[] = [
   {
     id: 4,
     name: "Weekend people",
-    initials: "☀",
+    initials: "☀\uFE0E", // Request text presentation so iOS doesn't render a colored emoji.
     color: "sky",
     sender: "Mia",
     preview: "Photo",
@@ -164,7 +157,7 @@ const initialChats: Chat[] = [
   {
     id: 8,
     name: "Sunday dinner",
-    initials: "🍋",
+    initials: "SD",
     color: "yellow",
     sender: "You",
     preview: "I’ll bring something sweet",
@@ -201,7 +194,10 @@ function SwipeRow({
     const scroller = scrollerRef.current!;
     let frame = 0;
     let wasPastThreshold = false;
-    const actions = actionsRef.current!;
+    const actions = actionsRef.current;
+    if (!actions) {
+      return;
+    }
     const buttons = actions.querySelectorAll("button");
     const revealAnimations: (Animation | undefined)[] = [];
 
@@ -227,8 +223,16 @@ function SwipeRow({
             revealAnimations[index] = button.animate(
               [
                 { transform: "scale(0)", offset: 0, easing: "ease-out" },
-                { transform: "scale(1.07)", offset: 0.4, easing: "ease-in-out" },
-                { transform: "scale(0.99)", offset: 0.75, easing: "ease-in-out" },
+                {
+                  transform: "scale(1.07)",
+                  offset: 0.4,
+                  easing: "ease-in-out",
+                },
+                {
+                  transform: "scale(0.99)",
+                  offset: 0.75,
+                  easing: "ease-in-out",
+                },
                 { transform: "scale(1)", offset: 1 },
               ],
               { duration: 581, fill: "both" },
@@ -308,6 +312,7 @@ function SwipeRow({
             touchAction: "pan-x pan-y",
             userSelect: "none",
             _after: {
+              display: variant === "circular" ? "none" : undefined,
               content: '""',
               position: "absolute",
               left: "82px",
@@ -315,8 +320,6 @@ function SwipeRow({
               right: "0",
               height: "1px",
               background: "var(--row-separator-color)",
-              opacity:
-                variant === "circular" ? "calc(1 - var(--reveal))" : undefined,
             },
             "li:last-child &": { _after: { display: "none" } },
             "@media (max-width: 520px)": {
@@ -335,38 +338,20 @@ function SwipeRow({
               flexShrink: "0",
               display: "grid",
               placeItems: "center",
-              color: "#202124",
+              color: "var(--avatar-ink)",
               borderRadius: "50%",
               fontSize:
-                chat.color === "red"
-                  ? "35px"
-                  : chat.color === "sky"
-                    ? "32px"
-                    : chat.color === "amber"
-                      ? "33px"
-                      : chat.color === "yellow"
-                        ? "26px"
-                        : "17px",
-              fontWeight: "550",
+                chat.color === "red" ||
+                chat.color === "sky" ||
+                chat.color === "amber"
+                  ? "24px"
+                  : "15px",
+              fontWeight: "500",
               letterSpacing: "-0.5px",
-              background:
-                chat.color === "orange"
-                  ? "linear-gradient(145deg, #f3b5ab, #eea399)"
-                  : chat.color === "red"
-                    ? "linear-gradient(145deg, #f3ada9, #e89a96)"
-                    : chat.color === "blue"
-                      ? "linear-gradient(145deg, #abc5fa, #93b3f2)"
-                      : chat.color === "sky"
-                        ? "linear-gradient(145deg, #a8d7ec, #96c9e0)"
-                        : chat.color === "pink"
-                          ? "linear-gradient(145deg, #e7bbd5, #dba7c8)"
-                          : chat.color === "amber"
-                            ? "linear-gradient(145deg, #f8dfa5, #efd18b)"
-                            : chat.color === "slate"
-                              ? "linear-gradient(145deg, #bdc6d2, #a9b5c5)"
-                              : chat.color === "yellow"
-                                ? "linear-gradient(145deg, #f9e9b1, #f3df9c)"
-                                : undefined,
+              backgroundColor: "var(--avatar-bg)",
+              backgroundImage:
+                "repeating-linear-gradient(135deg, transparent 0 4px, var(--avatar-hatch) 4px 5px)",
+              boxShadow: "inset 0 0 0 1px var(--avatar-border)",
             })}
             aria-hidden="true"
           >
@@ -637,20 +622,12 @@ function SwipeRow({
 }
 
 function ConversationDemo({ variant }: { variant: ActionVariant }) {
-  const [chats, setChats] = useState(initialChats);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [chats, setChats] = useState(() => initialChats.slice(0, 4));
   const [notice, setNotice] = useState<{
     text: string;
     undo?: () => void;
   } | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const shownChats = chats.filter(
-    (chat) =>
-      chat.name.toLowerCase().includes(query.toLowerCase()) &&
-      (filter === "all" || chat.unread),
-  );
-  const unreadCount = chats.filter((chat) => chat.unread).length;
 
   useEffect(() => {
     if (!notice) return;
@@ -677,14 +654,12 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
     listRef.current
       ?.querySelectorAll("[data-chat-id]")
       .forEach((row) => row.scrollTo({ left: 0, behavior: "instant" }));
-    setChats(initialChats);
-    setFilter("all");
-    setQuery("");
+    setChats(initialChats.slice(0, 4));
     setNotice(null);
   }
 
   return (
-    <>
+    <div>
       <section
         className={css({
           position: "relative",
@@ -723,7 +698,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 margin: "0",
               })}
             >
-              Chats
+              {`${variant.charAt(0).toUpperCase()}${variant.slice(1)}`}
             </h2>
             <span
               className={css({
@@ -738,149 +713,6 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 : "Demo conversations"}
             </span>
           </div>
-          <label
-            className={css({
-              display: "flex",
-              alignItems: "center",
-              gap: "9px",
-              borderRadius: "9px",
-              padding: "10px 12px",
-              background: "var(--control-bg)",
-              color: "var(--text-muted)",
-              "&:focus-within": { boxShadow: "0 0 0 2px var(--focus-ring)" },
-            })}
-          >
-            <Icon
-              name="search"
-              className={css({
-                width: "17px",
-                height: "17px",
-                flexShrink: "0",
-              })}
-            />
-            <input
-              className={css({
-                width: "100%",
-                border: "0",
-                outline: "medium none currentColor",
-                minWidth: "0",
-                background: "transparent",
-                fontSize: "12px",
-                color: "var(--text-color)",
-                _placeholder: { color: "var(--text-muted)" },
-              })}
-              placeholder="Search conversations"
-              aria-label="Search conversations"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <span
-              className={css({
-                color: "var(--icon-muted)",
-                fontSize: "17px",
-                lineHeight: "1",
-              })}
-            >
-              ⌕
-            </span>
-          </label>
-          <div
-            className={css({ display: "flex", gap: "23px", marginTop: "14px" })}
-            aria-label="Filter conversations"
-          >
-            <button
-              aria-pressed={filter === "all"}
-              className={css({
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 1px 14px",
-                color: "var(--text-secondary)",
-                border: "0",
-                background: "transparent",
-                fontSize: "12px",
-                fontWeight: "600",
-                '&[aria-pressed="true"]': {
-                  color: "var(--accent)",
-                  _after: {
-                    content: '""',
-                    position: "absolute",
-                    bottom: "0",
-                    left: "0",
-                    right: "0",
-                    height: "3px",
-                    background: "var(--accent)",
-                    borderRadius: "3px 3px 0 0",
-                  },
-                },
-              })}
-              onClick={() => setFilter("all")}
-            >
-              All chats{" "}
-              <span
-                className={css({
-                  fontSize: "9px",
-                  background: "var(--count-bg)",
-                  color: "var(--text-secondary)",
-                  padding: "2px 5px",
-                  borderRadius: "8px",
-                  'button[aria-pressed="true"] &': {
-                    color: "var(--accent)",
-                    background: "var(--count-active-bg)",
-                  },
-                })}
-              >
-                {chats.length}
-              </span>
-            </button>
-            <button
-              aria-pressed={filter === "unread"}
-              className={css({
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 1px 14px",
-                color: "var(--text-secondary)",
-                border: "0",
-                background: "transparent",
-                fontSize: "12px",
-                fontWeight: "600",
-                '&[aria-pressed="true"]': {
-                  color: "var(--accent)",
-                  _after: {
-                    content: '""',
-                    position: "absolute",
-                    bottom: "0",
-                    left: "0",
-                    right: "0",
-                    height: "3px",
-                    background: "var(--accent)",
-                    borderRadius: "3px 3px 0 0",
-                  },
-                },
-              })}
-              onClick={() => setFilter("unread")}
-            >
-              Unread{" "}
-              <span
-                className={css({
-                  fontSize: "9px",
-                  background: "var(--count-bg)",
-                  color: "var(--text-secondary)",
-                  padding: "2px 5px",
-                  borderRadius: "8px",
-                  'button[aria-pressed="true"] &': {
-                    color: "var(--accent)",
-                    background: "var(--count-active-bg)",
-                  },
-                })}
-              >
-                {unreadCount}
-              </span>
-            </button>
-          </div>
         </header>
 
         <ul
@@ -889,10 +721,13 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             padding: "0",
             margin: "0",
             borderTop: "1px solid var(--separator-color)",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, auto)",
+            gap: variant === "circular" ? 1 : 0,
           })}
           ref={listRef}
         >
-          {shownChats.map((chat) => (
+          {chats.map((chat) => (
             <SwipeRow
               key={chat.id}
               chat={chat}
@@ -912,7 +747,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               }}
             />
           ))}
-          {shownChats.length === 0 && (
+          {chats.length === 0 && (
             <li
               className={css({
                 padding: "60px 20px",
@@ -921,7 +756,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 fontSize: "13px",
               })}
             >
-              {query ? "No conversations found." : "You’re all caught up."}
+              No conversations left. Reset to start again.
             </li>
           )}
         </ul>
@@ -948,7 +783,9 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             })}
           />
           <span>Swipe left for mute & archive</span>
-          <span className={css({ padding: "0 2px", color: "var(--icon-muted)" })}>
+          <span
+            className={css({ padding: "0 2px", color: "var(--icon-muted)" })}
+          >
             ·
           </span>
           <span>Swipe right to close</span>
@@ -1060,7 +897,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1085,31 +922,9 @@ function App() {
           "@media (max-width: 520px)": { marginBottom: "23px" },
         })}
       >
-        <span
-          className={css({
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "7px",
-            color: "var(--text-secondary)",
-            fontSize: "9px",
-            fontWeight: "650",
-            letterSpacing: "1.7px",
-          })}
-        >
-          <span
-            className={css({
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              background: "var(--accent)",
-              boxShadow: "0 0 0 3px var(--count-active-bg)",
-            })}
-          />
-          WEB DEMO
-        </span>
         <h1
           className={css({
-            margin: "15px 0 8px",
+            margin: "0 8px",
             fontSize: "28px",
             lineHeight: "1.2",
             letterSpacing: "-1px",
@@ -1132,10 +947,17 @@ function App() {
         </p>
       </header>
 
-      <ConversationDemo variant="classic" />
-      <div className={css({ marginTop: "48px" })}>
+      <div
+        className={css({
+          display: "grid",
+          gap: 48,
+          gridTemplateColumns: "minmax(0, auto)",
+        })}
+      >
         <ConversationDemo variant="circular" />
+        <ConversationDemo variant="classic" />
       </div>
+
       <footer
         className={css({
           display: "flex",
@@ -1152,9 +974,11 @@ function App() {
           },
         })}
       >
-        NATIVE SCROLL <span className={css({ color: "var(--icon-muted)" })}>+</span>{" "}
-        CSS SCROLL SNAP <span className={css({ color: "var(--icon-muted)" })}>·</span>{" "}
-        NO GESTURE LIBRARY
+        NATIVE SCROLL{" "}
+        <span className={css({ color: "var(--icon-muted)" })}>+</span> CSS
+        SCROLL SNAP{" "}
+        <span className={css({ color: "var(--icon-muted)" })}>·</span> NO
+        GESTURE LIBRARY
       </footer>
     </main>
   );

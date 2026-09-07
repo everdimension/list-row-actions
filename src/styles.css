@@ -30,6 +30,10 @@
     --card-shadow: 0 1px 3px #2021240a;
     --toast-bg: #303134;
     --toast-link: #93b3f2;
+    --avatar-bg: #f3f6fa;
+    --avatar-ink: #6c819b;
+    --avatar-hatch: #b8c9df55;
+    --avatar-border: #c6d3e180;
     font-family:
       "DM Sans",
       -apple-system,
@@ -68,6 +72,10 @@
       --focus-ring: #93b3f266;
       --card-shadow: none;
       --toast-bg: #3c4043;
+      --avatar-bg: #252b33;
+      --avatar-ink: #91a5be;
+      --avatar-hatch: #91acc322;
+      --avatar-border: #91acc333;
     }
   }
 }
