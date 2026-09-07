@@ -179,13 +179,17 @@ const prefersReducedMotion = () =>
 const scrollBehavior = (): ScrollBehavior =>
   prefersReducedMotion() ? "instant" : "smooth";
 
+type ActionVariant = "classic" | "circular";
+
 /** The browser owns the gesture, momentum, and snapping. JS only supplies visual feedback. */
 function SwipeRow({
   chat,
+  variant,
   onMute,
   onArchive,
 }: {
   chat: Chat;
+  variant: ActionVariant;
   onMute: () => void;
   onArchive: () => void;
 }) {
@@ -198,17 +202,48 @@ function SwipeRow({
     let frame = 0;
     let wasPastThreshold = false;
     const actions = actionsRef.current!;
+    const buttons = actions.querySelectorAll("button");
+    const revealAnimations: (Animation | undefined)[] = [];
 
     const update = () => {
       const progress = Math.max(
         0,
         Math.min(1, scroller.scrollLeft / actions.offsetWidth),
       );
-      actions.style.setProperty("--reveal", String(progress));
+      scroller.style.setProperty("--reveal", String(progress));
       setRevealed(progress > 0.05);
 
+      if (variant === "circular") {
+        buttons.forEach((button, index) => {
+          // Latch each phase until closed, so reversing a swipe won't restart it.
+          if (scroller.scrollLeft <= 1) {
+            revealAnimations[index]?.cancel();
+            revealAnimations[index] = undefined;
+          } else if (
+            progress >= (index === 0 ? 0.4 : 0.8) &&
+            !revealAnimations[index] &&
+            !prefersReducedMotion()
+          ) {
+            revealAnimations[index] = button.animate(
+              [
+                { transform: "scale(0)", offset: 0, easing: "ease-out" },
+                { transform: "scale(1.07)", offset: 0.4, easing: "ease-in-out" },
+                { transform: "scale(0.99)", offset: 0.75, easing: "ease-in-out" },
+                { transform: "scale(1)", offset: 1 },
+              ],
+              { duration: 581, fill: "both" },
+            );
+          }
+        });
+      }
+
       const pastThreshold = progress >= 0.8;
-      if (pastThreshold && !wasPastThreshold && !prefersReducedMotion()) {
+      if (
+        variant === "classic" &&
+        pastThreshold &&
+        !wasPastThreshold &&
+        !prefersReducedMotion()
+      ) {
         actions.querySelectorAll("button svg").forEach((icon, index) => {
           icon.getAnimations().forEach((animation) => animation.cancel());
           icon.animate(
@@ -232,8 +267,9 @@ function SwipeRow({
     return () => {
       cancelAnimationFrame(frame);
       scroller.removeEventListener("scroll", onScroll);
+      revealAnimations.forEach((animation) => animation?.cancel());
     };
-  }, []);
+  }, [variant]);
 
   const close = () =>
     scrollerRef.current?.scrollTo({ left: 0, behavior: scrollBehavior() });
@@ -242,6 +278,7 @@ function SwipeRow({
     <li className={css({ overflow: "hidden" })}>
       <div
         className={css({
+          "--reveal": "0",
           display: "flex",
           overflowX: "auto",
           overscrollBehaviorX: "contain",
@@ -261,7 +298,12 @@ function SwipeRow({
             alignItems: "center",
             gap: "12px",
             padding: "15px 20px",
-            background: "white",
+            background:
+              variant === "circular"
+                ? "rgba(243, 245, 248, var(--reveal))"
+                : "white",
+            borderRadius: "16px",
+            overflow: variant === "circular" ? "hidden" : undefined,
             scrollSnapAlign: "start",
             touchAction: "pan-x pan-y",
             userSelect: "none",
@@ -273,6 +315,8 @@ function SwipeRow({
               right: "0",
               height: "1px",
               background: "#f0f2f5",
+              opacity:
+                variant === "circular" ? "calc(1 - var(--reveal))" : undefined,
             },
             "li:last-child &": { _after: { display: "none" } },
             "@media (max-width: 520px)": {
@@ -460,18 +504,23 @@ function SwipeRow({
         <div
           ref={actionsRef}
           className={css({
-            "--reveal": "0",
             display: "flex",
             flex: "0 0 160px",
             alignSelf: "stretch",
             scrollSnapAlign: "end",
+            alignItems: variant === "circular" ? "center" : undefined,
+            gap: variant === "circular" ? "12px" : undefined,
+            padding: variant === "circular" ? "0 14px" : undefined,
+            background: "transparent",
           })}
           inert={!revealed}
         >
           <button
             className={css({
               display: "flex",
-              flex: "1",
+              flex: variant === "circular" ? "0 0 60px" : "1",
+              height: variant === "circular" ? "60px" : undefined,
+              borderRadius: variant === "circular" ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
@@ -479,6 +528,8 @@ function SwipeRow({
               padding: "0",
               color: "white",
               background: "#9299c6",
+              transform: variant === "circular" ? "scale(0)" : undefined,
+              "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
@@ -496,12 +547,17 @@ function SwipeRow({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "7px",
+                gap: variant === "classic" ? "7px" : undefined,
                 fontSize: "10px",
                 fontWeight: "550",
-                opacity: "calc(0.35 + var(--reveal) * 0.65)",
+                opacity:
+                  variant === "circular"
+                    ? "1"
+                    : "calc(0.35 + var(--reveal) * 0.65)",
                 transform:
-                  "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                  variant === "circular"
+                    ? undefined
+                    : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
                 "@media (prefers-reduced-motion: reduce)": {
                   transform: "none",
                   opacity: "1",
@@ -512,13 +568,17 @@ function SwipeRow({
                 name={chat.muted ? "bell" : "mute"}
                 className={css({ width: "23px", height: "23px" })}
               />
-              <span>{chat.muted ? "Unmute" : "Mute"}</span>
+              {variant === "classic" && (
+                <span>{chat.muted ? "Unmute" : "Mute"}</span>
+              )}
             </span>
           </button>
           <button
             className={css({
               display: "flex",
-              flex: "1",
+              flex: variant === "circular" ? "0 0 60px" : "1",
+              height: variant === "circular" ? "60px" : undefined,
+              borderRadius: variant === "circular" ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
@@ -526,6 +586,8 @@ function SwipeRow({
               padding: "0",
               color: "white",
               background: "#469ed3",
+              transform: variant === "circular" ? "scale(0)" : undefined,
+              "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
@@ -540,12 +602,17 @@ function SwipeRow({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "7px",
+                gap: variant === "classic" ? "7px" : undefined,
                 fontSize: "10px",
                 fontWeight: "550",
-                opacity: "calc(0.35 + var(--reveal) * 0.65)",
+                opacity:
+                  variant === "circular"
+                    ? "1"
+                    : "calc(0.35 + var(--reveal) * 0.65)",
                 transform:
-                  "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                  variant === "circular"
+                    ? undefined
+                    : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
                 "@media (prefers-reduced-motion: reduce)": {
                   transform: "none",
                   opacity: "1",
@@ -556,7 +623,7 @@ function SwipeRow({
                 name="archive"
                 className={css({ width: "23px", height: "23px" })}
               />
-              <span>Archive</span>
+              {variant === "classic" && <span>Archive</span>}
             </span>
           </button>
         </div>
@@ -565,7 +632,7 @@ function SwipeRow({
   );
 }
 
-function App() {
+function ConversationDemo({ variant }: { variant: ActionVariant }) {
   const [chats, setChats] = useState(initialChats);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -613,72 +680,7 @@ function App() {
   }
 
   return (
-    <main
-      className={css({
-        width: "min(100% - 40px, 460px)",
-        margin: "0 auto",
-        padding: "54px 0 26px",
-        "@media (max-width: 520px)": {
-          width: "min(100% - 24px, 460px)",
-          paddingTop: "28px",
-          paddingBottom: "max(24px, env(safe-area-inset-bottom))",
-        },
-      })}
-    >
-      <header
-        className={css({
-          textAlign: "center",
-          marginBottom: "29px",
-          "@media (max-width: 520px)": { marginBottom: "23px" },
-        })}
-      >
-        <span
-          className={css({
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "7px",
-            color: "#83909e",
-            fontSize: "9px",
-            fontWeight: "650",
-            letterSpacing: "1.7px",
-          })}
-        >
-          <span
-            className={css({
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              background: "#48a9d7",
-              boxShadow: "0 0 0 3px #e4edf4",
-            })}
-          />
-          WEB DEMO
-        </span>
-        <h1
-          className={css({
-            margin: "15px 0 8px",
-            fontSize: "28px",
-            lineHeight: "1.2",
-            letterSpacing: "-1px",
-            fontWeight: "600",
-            textWrap: "pretty",
-            "@media (max-width: 520px)": { fontSize: "25px" },
-          })}
-        >
-          Swipe Actions with CSS Scroll Snap
-        </h1>
-        <p
-          className={css({
-            margin: "0",
-            fontSize: "12px",
-            color: "#8a94a1",
-            "@media (max-width: 520px)": { fontSize: "11px" },
-          })}
-        >
-          Swipe a list row to reveal contextual actions.
-        </p>
-      </header>
-
+    <>
       <section
         className={css({
           position: "relative",
@@ -689,7 +691,11 @@ function App() {
           boxShadow: "0 16px 45px -20px #2d486b30, 0 2px 5px #263c5003",
           "@media (max-width: 520px)": { borderRadius: "16px" },
         })}
-        aria-label="Conversation list demo"
+        aria-label={
+          variant === "circular"
+            ? "Circular actions demo"
+            : "Conversation list demo"
+        }
       >
         <header
           className={css({
@@ -723,7 +729,9 @@ function App() {
                 "@media (max-width: 520px)": { fontSize: "9px" },
               })}
             >
-              Demo conversations
+              {variant === "circular"
+                ? "Circular actions"
+                : "Demo conversations"}
             </span>
           </div>
           <label
@@ -884,6 +892,7 @@ function App() {
             <SwipeRow
               key={chat.id}
               chat={chat}
+              variant={variant}
               onArchive={() => archive(chat)}
               onMute={() => {
                 setChats((current) =>
@@ -1044,6 +1053,82 @@ function App() {
             Reset
           </button>
         </div>
+      </div>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <main
+      className={css({
+        width: "min(100% - 40px, 460px)",
+        margin: "0 auto",
+        padding: "54px 0 26px",
+        "@media (max-width: 520px)": {
+          width: "min(100% - 24px, 460px)",
+          paddingTop: "28px",
+          paddingBottom: "max(24px, env(safe-area-inset-bottom))",
+        },
+      })}
+    >
+      <header
+        className={css({
+          textAlign: "center",
+          marginBottom: "29px",
+          "@media (max-width: 520px)": { marginBottom: "23px" },
+        })}
+      >
+        <span
+          className={css({
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "7px",
+            color: "#83909e",
+            fontSize: "9px",
+            fontWeight: "650",
+            letterSpacing: "1.7px",
+          })}
+        >
+          <span
+            className={css({
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              background: "#48a9d7",
+              boxShadow: "0 0 0 3px #e4edf4",
+            })}
+          />
+          WEB DEMO
+        </span>
+        <h1
+          className={css({
+            margin: "15px 0 8px",
+            fontSize: "28px",
+            lineHeight: "1.2",
+            letterSpacing: "-1px",
+            fontWeight: "600",
+            textWrap: "pretty",
+            "@media (max-width: 520px)": { fontSize: "25px" },
+          })}
+        >
+          Swipe Actions with CSS Scroll Snap
+        </h1>
+        <p
+          className={css({
+            margin: "0",
+            fontSize: "12px",
+            color: "#8a94a1",
+            "@media (max-width: 520px)": { fontSize: "11px" },
+          })}
+        >
+          Swipe a list row to reveal contextual actions.
+        </p>
+      </header>
+
+      <ConversationDemo variant="classic" />
+      <div className={css({ marginTop: "48px" })}>
+        <ConversationDemo variant="circular" />
       </div>
       <footer
         className={css({
