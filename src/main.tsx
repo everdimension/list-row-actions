@@ -1,5 +1,6 @@
 import { StrictMode, useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import { css } from "../styled-system/css";
 import "./styles.css";
 
 type IconName =
@@ -189,13 +190,14 @@ function SwipeRow({
   onArchive: () => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     const scroller = scrollerRef.current!;
     let frame = 0;
     let wasPastThreshold = false;
-    const actions = scroller.querySelector<HTMLElement>(".row-actions")!;
+    const actions = actionsRef.current!;
 
     const update = () => {
       const progress = Math.max(
@@ -207,7 +209,7 @@ function SwipeRow({
 
       const pastThreshold = progress >= 0.8;
       if (pastThreshold && !wasPastThreshold && !prefersReducedMotion()) {
-        scroller.querySelectorAll(".action-icon").forEach((icon, index) => {
+        actions.querySelectorAll("button svg").forEach((icon, index) => {
           icon.getAnimations().forEach((animation) => animation.cancel());
           icon.animate(
             [
@@ -237,61 +239,323 @@ function SwipeRow({
     scrollerRef.current?.scrollTo({ left: 0, behavior: scrollBehavior() });
 
   return (
-    <li className="chat-row">
-      <div className="row-scroller" ref={scrollerRef} data-chat-id={chat.id}>
-        <div className="conversation" onClick={close}>
-          <div className={`avatar ${chat.color}`} aria-hidden="true">
+    <li className={css({ overflow: "hidden" })}>
+      <div
+        className={css({
+          display: "flex",
+          overflowX: "auto",
+          overscrollBehaviorX: "contain",
+          scrollSnapType: "x mandatory",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        })}
+        ref={scrollerRef}
+        data-chat-id={chat.id}
+      >
+        <div
+          className={css({
+            position: "relative",
+            flex: "0 0 100%",
+            minWidth: "0",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "15px 20px",
+            background: "white",
+            scrollSnapAlign: "start",
+            touchAction: "pan-x pan-y",
+            userSelect: "none",
+            _after: {
+              content: '""',
+              position: "absolute",
+              left: "82px",
+              bottom: "0",
+              right: "0",
+              height: "1px",
+              background: "#f0f2f5",
+            },
+            "li:last-child &": { _after: { display: "none" } },
+            "@media (max-width: 520px)": {
+              padding: "14px 15px",
+              gap: "10px",
+              _after: { left: "74px" },
+            },
+          })}
+          onClick={close}
+        >
+          <div
+            className={css({
+              position: "relative",
+              width: "49px",
+              height: "49px",
+              flexShrink: "0",
+              display: "grid",
+              placeItems: "center",
+              color: "white",
+              borderRadius: "50%",
+              fontSize:
+                chat.color === "violet"
+                  ? "35px"
+                  : chat.color === "green"
+                    ? "32px"
+                    : chat.color === "cyan"
+                      ? "33px"
+                      : chat.color === "lemon"
+                        ? "26px"
+                        : "17px",
+              fontWeight: "550",
+              letterSpacing: "-0.5px",
+              background:
+                chat.color === "peach"
+                  ? "linear-gradient(145deg, #efc0a4, #d8917b)"
+                  : chat.color === "violet"
+                    ? "linear-gradient(145deg, #b0a5ed, #8070c9)"
+                    : chat.color === "blue"
+                      ? "linear-gradient(145deg, #89b9e1, #5e89b7)"
+                      : chat.color === "green"
+                        ? "linear-gradient(145deg, #a0cdb4, #68a387)"
+                        : chat.color === "rose"
+                          ? "linear-gradient(145deg, #e8b1c1, #c47f9a)"
+                          : chat.color === "cyan"
+                            ? "linear-gradient(145deg, #93ccda, #5b9eaf)"
+                            : chat.color === "gold"
+                              ? "linear-gradient(145deg, #dcc092, #b29874)"
+                              : chat.color === "lemon"
+                                ? "#f4e9b8"
+                                : undefined,
+            })}
+            aria-hidden="true"
+          >
             {chat.initials}
-            {chat.online && <span className="online-dot" />}
+            {chat.online && (
+              <span
+                className={css({
+                  position: "absolute",
+                  right: "0",
+                  bottom: "1px",
+                  width: "12px",
+                  height: "12px",
+                  background: "#62bd86",
+                  border: "2.5px solid white",
+                  borderRadius: "50%",
+                })}
+              />
+            )}
           </div>
-          <div className="conversation-copy">
-            <div className="conversation-topline">
-              <span className="conversation-name">{chat.name}</span>
-              {chat.muted && <Icon name="mute" className="muted-icon" />}
-              <div className="timestamp">
-                {chat.sent && <Icon name="check" />}
+          <div className={css({ minWidth: "0", flex: "1" })}>
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                marginBottom: "6px",
+              })}
+            >
+              <span
+                className={css({
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontSize: "13px",
+                  fontWeight: "650",
+                  letterSpacing: "-0.15px",
+                })}
+              >
+                {chat.name}
+              </span>
+              {chat.muted && (
+                <Icon
+                  name="mute"
+                  className={css({
+                    width: "12px",
+                    height: "12px",
+                    color: "#b2bac4",
+                    flexShrink: "0",
+                  })}
+                />
+              )}
+              <div
+                className={css({
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  color: "#a4acb7",
+                  fontSize: "9px",
+                  whiteSpace: "nowrap",
+                })}
+              >
+                {chat.sent && (
+                  <Icon
+                    name="check"
+                    className={css({
+                      width: "15px",
+                      height: "15px",
+                      color: "#56afd9",
+                    })}
+                  />
+                )}
                 <time>{chat.time}</time>
               </div>
             </div>
-            <div className="conversation-bottomline">
-              <span className="preview">
-                {chat.sender && <span className="sender">{chat.sender}: </span>}
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              })}
+            >
+              <span
+                className={css({
+                  minWidth: "0",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontSize: "11px",
+                  color: "#929ca8",
+                  lineHeight: "18px",
+                })}
+              >
+                {chat.sender && (
+                  <span className={css({ color: "#5a6879" })}>
+                    {chat.sender}:{" "}
+                  </span>
+                )}
                 {chat.preview}
               </span>
               {chat.unread ? (
-                <span className={`unread ${chat.muted ? "muted" : ""}`}>
+                <span
+                  className={css({
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: "0",
+                    marginLeft: "auto",
+                    height: "18px",
+                    minWidth: "18px",
+                    padding: "0 5px",
+                    borderRadius: "10px",
+                    background: chat.muted ? "#c2cad3" : "#43a7dc",
+                    color: "white",
+                    fontSize: "10px",
+                    fontWeight: "600",
+                  })}
+                >
                   {chat.unread}
                 </span>
               ) : chat.pinned ? (
-                <Icon name="pin" className="pin-icon" />
+                <Icon
+                  name="pin"
+                  className={css({
+                    width: "13px",
+                    height: "13px",
+                    marginLeft: "auto",
+                    color: "#b6c0cb",
+                    flexShrink: "0",
+                  })}
+                />
               ) : null}
             </div>
           </div>
         </div>
-        <div className="row-actions" inert={!revealed}>
+        <div
+          ref={actionsRef}
+          className={css({
+            "--reveal": "0",
+            display: "flex",
+            flex: "0 0 160px",
+            alignSelf: "stretch",
+            scrollSnapAlign: "end",
+          })}
+          inert={!revealed}
+        >
           <button
-            className="row-action mute-action"
+            className={css({
+              display: "flex",
+              flex: "1",
+              minWidth: "0",
+              justifyContent: "center",
+              alignItems: "center",
+              border: "0",
+              padding: "0",
+              color: "white",
+              background: "#9299c6",
+              "&:active": { filter: "brightness(0.94)" },
+              "&:focus-visible": {
+                outlineOffset: "-4px",
+                outlineColor: "white",
+              },
+            })}
             aria-label={`${chat.muted ? "Unmute" : "Mute"} ${chat.name}`}
             onClick={() => {
               onMute();
               close();
             }}
           >
-            <span className="action-content">
+            <span
+              className={css({
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "7px",
+                fontSize: "10px",
+                fontWeight: "550",
+                opacity: "calc(0.35 + var(--reveal) * 0.65)",
+                transform:
+                  "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                "@media (prefers-reduced-motion: reduce)": {
+                  transform: "none",
+                  opacity: "1",
+                },
+              })}
+            >
               <Icon
                 name={chat.muted ? "bell" : "mute"}
-                className="action-icon"
+                className={css({ width: "23px", height: "23px" })}
               />
               <span>{chat.muted ? "Unmute" : "Mute"}</span>
             </span>
           </button>
           <button
-            className="row-action archive-action"
+            className={css({
+              display: "flex",
+              flex: "1",
+              minWidth: "0",
+              justifyContent: "center",
+              alignItems: "center",
+              border: "0",
+              padding: "0",
+              color: "white",
+              background: "#469ed3",
+              "&:active": { filter: "brightness(0.94)" },
+              "&:focus-visible": {
+                outlineOffset: "-4px",
+                outlineColor: "white",
+              },
+            })}
             aria-label={`Archive ${chat.name}`}
             onClick={onArchive}
           >
-            <span className="action-content">
-              <Icon name="archive" className="action-icon" />
+            <span
+              className={css({
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "7px",
+                fontSize: "10px",
+                fontWeight: "550",
+                opacity: "calc(0.35 + var(--reveal) * 0.65)",
+                transform:
+                  "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                "@media (prefers-reduced-motion: reduce)": {
+                  transform: "none",
+                  opacity: "1",
+                },
+              })}
+            >
+              <Icon
+                name="archive"
+                className={css({ width: "23px", height: "23px" })}
+              />
               <span>Archive</span>
             </span>
           </button>
@@ -340,7 +604,7 @@ function App() {
 
   function reset() {
     listRef.current
-      ?.querySelectorAll(".row-scroller")
+      ?.querySelectorAll("[data-chat-id]")
       .forEach((row) => row.scrollTo({ left: 0, behavior: "instant" }));
     setChats(initialChats);
     setFilter("all");
@@ -349,53 +613,273 @@ function App() {
   }
 
   return (
-    <main className="demo">
-      <header className="demo-heading">
-        <span className="eyebrow">
-          <span className="status-dot" />
+    <main
+      className={css({
+        width: "min(100% - 40px, 460px)",
+        margin: "0 auto",
+        padding: "54px 0 26px",
+        "@media (max-width: 520px)": {
+          width: "min(100% - 24px, 460px)",
+          paddingTop: "28px",
+          paddingBottom: "max(24px, env(safe-area-inset-bottom))",
+        },
+      })}
+    >
+      <header
+        className={css({
+          textAlign: "center",
+          marginBottom: "29px",
+          "@media (max-width: 520px)": { marginBottom: "23px" },
+        })}
+      >
+        <span
+          className={css({
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "7px",
+            color: "#83909e",
+            fontSize: "9px",
+            fontWeight: "650",
+            letterSpacing: "1.7px",
+          })}
+        >
+          <span
+            className={css({
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              background: "#48a9d7",
+              boxShadow: "0 0 0 3px #e4edf4",
+            })}
+          />
           WEB DEMO
         </span>
-        <h1 style={{ textWrap: "pretty" }}>
+        <h1
+          className={css({
+            margin: "15px 0 8px",
+            fontSize: "28px",
+            lineHeight: "1.2",
+            letterSpacing: "-1px",
+            fontWeight: "600",
+            textWrap: "pretty",
+            "@media (max-width: 520px)": { fontSize: "25px" },
+          })}
+        >
           Swipe Actions with CSS Scroll Snap
         </h1>
-        <p>Swipe a list row to reveal contextual actions.</p>
+        <p
+          className={css({
+            margin: "0",
+            fontSize: "12px",
+            color: "#8a94a1",
+            "@media (max-width: 520px)": { fontSize: "11px" },
+          })}
+        >
+          Swipe a list row to reveal contextual actions.
+        </p>
       </header>
 
-      <section className="messenger" aria-label="Conversation list demo">
-        <header className="messenger-header">
-          <div className="app-heading">
-            <h2>Chats</h2>
-            <span className="connection-status">Demo conversations</span>
+      <section
+        className={css({
+          position: "relative",
+          background: "white",
+          border: "1px solid #e3e8ee",
+          borderRadius: "19px",
+          overflow: "hidden",
+          boxShadow: "0 16px 45px -20px #2d486b30, 0 2px 5px #263c5003",
+          "@media (max-width: 520px)": { borderRadius: "16px" },
+        })}
+        aria-label="Conversation list demo"
+      >
+        <header
+          className={css({
+            padding: "22px 21px 0",
+            "@media (max-width: 520px)": { padding: "20px 16px 0" },
+          })}
+        >
+          <div
+            className={css({
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "20px",
+            })}
+          >
+            <h2
+              className={css({
+                fontSize: "23px",
+                fontWeight: "700",
+                letterSpacing: "-0.8px",
+                margin: "0",
+              })}
+            >
+              Chats
+            </h2>
+            <span
+              className={css({
+                marginLeft: "auto",
+                fontSize: "10px",
+                color: "#9aa4ae",
+                "@media (max-width: 520px)": { fontSize: "9px" },
+              })}
+            >
+              Demo conversations
+            </span>
           </div>
-          <label className="search">
-            <Icon name="search" />
+          <label
+            className={css({
+              display: "flex",
+              alignItems: "center",
+              gap: "9px",
+              borderRadius: "9px",
+              padding: "10px 12px",
+              background: "#f2f4f7",
+              color: "#9ba6b1",
+              "&:focus-within": { boxShadow: "0 0 0 2px #299adb55" },
+            })}
+          >
+            <Icon
+              name="search"
+              className={css({
+                width: "17px",
+                height: "17px",
+                flexShrink: "0",
+              })}
+            />
             <input
+              className={css({
+                width: "100%",
+                border: "0",
+                outline: "medium none currentColor",
+                minWidth: "0",
+                background: "transparent",
+                fontSize: "12px",
+                color: "#394656",
+                _placeholder: { color: "#96a0ac" },
+              })}
               placeholder="Search conversations"
               aria-label="Search conversations"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-            <span className="search-hint">⌕</span>
+            <span
+              className={css({
+                color: "#bbc2ca",
+                fontSize: "17px",
+                lineHeight: "1",
+              })}
+            >
+              ⌕
+            </span>
           </label>
-          <div className="filters" aria-label="Filter conversations">
+          <div
+            className={css({ display: "flex", gap: "23px", marginTop: "14px" })}
+            aria-label="Filter conversations"
+          >
             <button
               aria-pressed={filter === "all"}
-              className={filter === "all" ? "selected" : ""}
+              className={css({
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 1px 14px",
+                color: "#98a0ab",
+                border: "0",
+                background: "transparent",
+                fontSize: "12px",
+                fontWeight: "600",
+                '&[aria-pressed="true"]': {
+                  color: "#2996d0",
+                  _after: {
+                    content: '""',
+                    position: "absolute",
+                    bottom: "0",
+                    left: "0",
+                    right: "0",
+                    height: "3px",
+                    background: "#299bd5",
+                    borderRadius: "3px 3px 0 0",
+                  },
+                },
+              })}
               onClick={() => setFilter("all")}
             >
-              All chats <span>{chats.length}</span>
+              All chats{" "}
+              <span
+                className={css({
+                  fontSize: "9px",
+                  background: "#edf0f3",
+                  color: "#919ba8",
+                  padding: "2px 5px",
+                  borderRadius: "8px",
+                  'button[aria-pressed="true"] &': {
+                    color: "#2797d1",
+                    background: "#e5f3fb",
+                  },
+                })}
+              >
+                {chats.length}
+              </span>
             </button>
             <button
               aria-pressed={filter === "unread"}
-              className={filter === "unread" ? "selected" : ""}
+              className={css({
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 1px 14px",
+                color: "#98a0ab",
+                border: "0",
+                background: "transparent",
+                fontSize: "12px",
+                fontWeight: "600",
+                '&[aria-pressed="true"]': {
+                  color: "#2996d0",
+                  _after: {
+                    content: '""',
+                    position: "absolute",
+                    bottom: "0",
+                    left: "0",
+                    right: "0",
+                    height: "3px",
+                    background: "#299bd5",
+                    borderRadius: "3px 3px 0 0",
+                  },
+                },
+              })}
               onClick={() => setFilter("unread")}
             >
-              Unread <span>{unreadCount}</span>
+              Unread{" "}
+              <span
+                className={css({
+                  fontSize: "9px",
+                  background: "#edf0f3",
+                  color: "#919ba8",
+                  padding: "2px 5px",
+                  borderRadius: "8px",
+                  'button[aria-pressed="true"] &': {
+                    color: "#2797d1",
+                    background: "#e5f3fb",
+                  },
+                })}
+              >
+                {unreadCount}
+              </span>
             </button>
           </div>
         </header>
 
-        <ul className="conversation-list" ref={listRef}>
+        <ul
+          className={css({
+            listStyle: "none",
+            padding: "0",
+            margin: "0",
+            borderTop: "1px solid #edf0f4",
+          })}
+          ref={listRef}
+        >
           {shownChats.map((chat) => (
             <SwipeRow
               key={chat.id}
@@ -416,22 +900,77 @@ function App() {
             />
           ))}
           {shownChats.length === 0 && (
-            <li className="empty-state">
+            <li
+              className={css({
+                padding: "60px 20px",
+                textAlign: "center",
+                color: "#929ca8",
+                fontSize: "13px",
+              })}
+            >
               {query ? "No conversations found." : "You’re all caught up."}
             </li>
           )}
         </ul>
-        <footer className="messenger-footer">
-          <Icon name="swipe" />
+        <footer
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            padding: "15px 10px",
+            background: "#fafbfd",
+            borderTop: "1px solid #edf0f4",
+            fontSize: "9px",
+            color: "#9aa6b4",
+            "@media (max-width: 520px)": { fontSize: "8px", gap: "4px" },
+          })}
+        >
+          <Icon
+            name="swipe"
+            className={css({
+              width: "14px",
+              height: "14px",
+              marginRight: "2px",
+            })}
+          />
           <span>Swipe left for mute & archive</span>
-          <span className="footer-dot">·</span>
+          <span className={css({ padding: "0 2px", color: "#c3ccd5" })}>·</span>
           <span>Swipe right to close</span>
         </footer>
         {notice && (
-          <div className="toast" role="status">
+          <div
+            className={css({
+              position: "absolute",
+              bottom: "52px",
+              left: "12px",
+              right: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              padding: "13px 16px",
+              borderRadius: "10px",
+              background: "#263647",
+              color: "white",
+              fontSize: "12px",
+              boxShadow: "0 4px 20px #172a4226",
+              animation: "toast-in 180ms ease-out",
+              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+            })}
+            role="status"
+          >
             <span>{notice.text}</span>
             {notice.undo && (
               <button
+                className={css({
+                  border: "0",
+                  padding: "0",
+                  background: "transparent",
+                  color: "#89cef4",
+                  fontWeight: "600",
+                  fontSize: "12px",
+                })}
                 onClick={() => {
                   notice.undo?.();
                   setNotice(null);
@@ -444,29 +983,87 @@ function App() {
         )}
       </section>
 
-      <div className="demo-controls">
+      <div
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+          margin: "17px 3px 0",
+          fontSize: "10px",
+          color: "#97a2af",
+          "@media (max-width: 520px)": { fontSize: "9px", gap: "5px" },
+        })}
+      >
         <span>Try it with touch or a trackpad.</span>
-        <div>
+        <div
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            gap: "13px",
+            "@media (max-width: 520px)": { gap: "10px" },
+          })}
+        >
           <button
-            className="preview-button"
+            className={css({
+              padding: "5px 0",
+              border: "0",
+              background: "transparent",
+              fontSize: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              color: "#398fbf",
+              "&:hover": { color: "#246e97" },
+            })}
             onClick={() => {
-              const row = listRef.current?.querySelector(".row-scroller");
+              const row = listRef.current?.querySelector("[data-chat-id]");
               row?.scrollTo({
                 left: row.scrollWidth,
                 behavior: scrollBehavior(),
               });
             }}
           >
-            Preview swipe <Icon name="arrow" />
+            Preview swipe{" "}
+            <Icon
+              name="arrow"
+              className={css({ width: "12px", height: "12px" })}
+            />
           </button>
-          <button className="reset-button" onClick={reset}>
+          <button
+            className={css({
+              padding: "5px 0",
+              border: "0",
+              background: "transparent",
+              fontSize: "10px",
+              color: "#9da6b2",
+              "&:hover": { color: "#246e97" },
+            })}
+            onClick={reset}
+          >
             Reset
           </button>
         </div>
       </div>
-      <footer className="page-footer">
-        NATIVE SCROLL <span>+</span> CSS SCROLL SNAP <span>·</span> NO GESTURE
-        LIBRARY
+      <footer
+        className={css({
+          display: "flex",
+          justifyContent: "center",
+          gap: "9px",
+          marginTop: "31px",
+          color: "#aab4bf",
+          fontSize: "8px",
+          letterSpacing: "1.15px",
+          "@media (max-width: 520px)": {
+            fontSize: "7px",
+            gap: "6px",
+            letterSpacing: "0.8px",
+          },
+        })}
+      >
+        NATIVE SCROLL <span className={css({ color: "#bdc5ce" })}>+</span> CSS
+        SCROLL SNAP <span className={css({ color: "#bdc5ce" })}>·</span> NO
+        GESTURE LIBRARY
       </footer>
     </main>
   );
