@@ -515,14 +515,17 @@ function SwipeRow({
               alignItems: "center",
               border: "0",
               padding: "0",
-              color: "var(--secondary-action-foreground)",
-              background: "var(--secondary-action)",
+              color:
+                variant === "classic" ? "white" : "var(--secondary-action-foreground)",
+              background:
+                variant === "classic" ? "#007aff" : "var(--secondary-action)",
               transform: variant === "circular" ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
-                outlineColor: "var(--secondary-action-foreground)",
+                outlineColor:
+                  variant === "classic" ? "white" : "var(--secondary-action-foreground)",
               },
             })}
             aria-label={`${chat.muted ? "Unmute" : "Mute"} ${chat.name}`}
@@ -573,14 +576,14 @@ function SwipeRow({
               alignItems: "center",
               border: "0",
               padding: "0",
-              color: "var(--accent-foreground)",
-              background: "var(--accent-solid)",
+              color: variant === "classic" ? "white" : "var(--accent-foreground)",
+              background: variant === "classic" ? "#ff3b30" : "var(--accent-solid)",
               transform: variant === "circular" ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
-                outlineColor: "var(--accent-foreground)",
+                outlineColor: variant === "classic" ? "white" : "var(--accent-foreground)",
               },
             })}
             aria-label={`Archive ${chat.name}`}
