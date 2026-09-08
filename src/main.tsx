@@ -1,4 +1,11 @@
-import { StrictMode, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  StrictMode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createRoot } from "react-dom/client";
 import { css } from "../styled-system/css";
 import "./styles.css";
@@ -8,6 +15,7 @@ type IconName =
   | "mute"
   | "bell"
   | "archive"
+  | "mail"
   | "check"
   | "pin"
   | "arrow"
@@ -36,6 +44,12 @@ function Icon({
       <>
         <rect x="3" y="3" width="18" height="4" rx="1" />
         <path d="M5 7v13h14V7M9 11h6" />
+      </>
+    ),
+    mail: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 6 9 7 9-7" />
       </>
     ),
     check: (
@@ -87,7 +101,7 @@ type Chat = {
 const initialChats: Chat[] = [
   {
     id: 1,
-    name: "Sofia Chen",
+    name: "John Lennon",
     initials: "SC",
     color: "orange",
     preview: "That little place on the corner? ☕",
@@ -108,7 +122,7 @@ const initialChats: Chat[] = [
   },
   {
     id: 3,
-    name: "Alex Morgan",
+    name: "Ringo Starr",
     initials: "AM",
     color: "blue",
     preview: "Sent you the playlist. No skips.",
@@ -118,7 +132,7 @@ const initialChats: Chat[] = [
   },
   {
     id: 4,
-    name: "Weekend people",
+    name: "Final build",
     initials: "☀\uFE0E", // Request text presentation so iOS doesn't render a colored emoji.
     color: "sky",
     sender: "Mia",
@@ -172,25 +186,35 @@ const prefersReducedMotion = () =>
 const scrollBehavior = (): ScrollBehavior =>
   prefersReducedMotion() ? "instant" : "smooth";
 
-type ActionVariant = "classic" | "circular";
+type ActionVariant =
+  | "classic"
+  | "circular"
+  | "circular-leading";
 
-/** The browser owns the gesture, momentum, and snapping. JS only supplies visual feedback. */
+/** The browser owns gestures and snapping; enhanced variants add reveal feedback. */
 function SwipeRow({
   chat,
   variant,
   onMute,
   onArchive,
+  onToggleRead,
 }: {
   chat: Chat;
   variant: ActionVariant;
   onMute: () => void;
   onArchive: () => void;
+  onToggleRead: () => void;
 }) {
+  const isCircular = variant !== "classic";
+  const hasLeadingActions = variant === "circular-leading";
   const scrollerRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
-  const [revealed, setRevealed] = useState(false);
+  const leadingActionsRef = useRef<HTMLDivElement>(null);
+  const [revealedEdge, setRevealedEdge] = useState<
+    "leading" | "trailing" | null
+  >(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const scroller = scrollerRef.current!;
     let frame = 0;
     let wasPastThreshold = false;
@@ -199,24 +223,57 @@ function SwipeRow({
       return;
     }
     const buttons = actions.querySelectorAll("button");
+    const leadingActions = leadingActionsRef.current;
+    const buttonReveals = [
+      ...Array.from(buttons, (button, index) => ({
+        button,
+        edge: "trailing",
+        threshold: index === 0 ? 0.4 : 0.8,
+      })),
+      ...Array.from(
+        leadingActions?.querySelectorAll("button") ?? [],
+        (button) => ({
+          button,
+          edge: "leading",
+          threshold: 0.4,
+        }),
+      ),
+    ];
     const revealAnimations: (Animation | undefined)[] = [];
 
     const update = () => {
+      const closedOffset = leadingActions?.offsetWidth ?? 0;
+      const displacement = scroller.scrollLeft - closedOffset;
       const progress = Math.max(
         0,
-        Math.min(1, scroller.scrollLeft / actions.offsetWidth),
+        Math.min(1, displacement / actions.offsetWidth),
       );
-      scroller.style.setProperty("--reveal", String(progress));
-      setRevealed(progress > 0.05);
+      const leadingProgress =
+        closedOffset > 0
+          ? Math.max(0, Math.min(1, -displacement / closedOffset))
+          : 0;
+      scroller.style.setProperty(
+        "--reveal",
+        String(Math.max(progress, leadingProgress)),
+      );
+      setRevealedEdge(
+        leadingProgress > 0.05
+          ? "leading"
+          : progress > 0.05
+            ? "trailing"
+            : null,
+      );
 
-      if (variant === "circular") {
-        buttons.forEach((button, index) => {
-          // Latch each phase until closed, so reversing a swipe won't restart it.
-          if (scroller.scrollLeft <= 1) {
+      if (isCircular) {
+        buttonReveals.forEach(({ button, edge, threshold }, index) => {
+          const buttonProgress =
+            edge === "leading" ? leadingProgress : progress;
+          // Reset when this edge closes, including swipes that cross to the other edge.
+          if (buttonProgress <= 0.01) {
             revealAnimations[index]?.cancel();
             revealAnimations[index] = undefined;
           } else if (
-            progress >= (index === 0 ? 0.4 : 0.8) &&
+            buttonProgress >= threshold &&
             !revealAnimations[index] &&
             !prefersReducedMotion()
           ) {
@@ -267,16 +324,25 @@ function SwipeRow({
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+    // With a leading tray, the closed row starts after it. Position before first paint.
+    scroller.scrollTo({
+      left: leadingActions?.offsetWidth ?? 0,
+      behavior: "instant",
+    });
+    update();
     scroller.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       scroller.removeEventListener("scroll", onScroll);
       revealAnimations.forEach((animation) => animation?.cancel());
     };
-  }, [variant]);
+  }, [variant, isCircular]);
 
   const close = () =>
-    scrollerRef.current?.scrollTo({ left: 0, behavior: scrollBehavior() });
+    scrollerRef.current?.scrollTo({
+      left: leadingActionsRef.current?.offsetWidth ?? 0,
+      behavior: scrollBehavior(),
+    });
 
   return (
     <li className={css({ overflow: "hidden" })}>
@@ -293,6 +359,53 @@ function SwipeRow({
         ref={scrollerRef}
         data-chat-id={chat.id}
       >
+        {hasLeadingActions && (
+          <div
+            ref={leadingActionsRef}
+            data-leading-actions=""
+            className={css({
+              display: "flex",
+              flex: "0 0 78px",
+              alignItems: "center",
+              padding: "0 14px",
+              scrollSnapAlign: "start",
+            })}
+            inert={revealedEdge !== "leading"}
+          >
+            <button
+              className={css({
+                display: "grid",
+                placeItems: "center",
+                flex: "0 0 50px",
+                height: "50px",
+                border: "0",
+                borderRadius: "50%",
+                padding: "0",
+                background: "var(--accent-solid)",
+                color: "var(--accent-foreground)",
+                transform: "scale(0)",
+                "@media (prefers-reduced-motion: reduce)": {
+                  transform: "none",
+                },
+                "&:active": { filter: "brightness(0.94)" },
+                "&:focus-visible": {
+                  outlineOffset: "-4px",
+                  outlineColor: "var(--accent-foreground)",
+                },
+              })}
+              aria-label={`Mark ${chat.name} as ${chat.unread ? "read" : "unread"}`}
+              onClick={() => {
+                onToggleRead();
+                close();
+              }}
+            >
+              <Icon
+                name={chat.unread ? "check" : "mail"}
+                className={css({ width: "23px", height: "23px" })}
+              />
+            </button>
+          </div>
+        )}
         <div
           className={css({
             position: "relative",
@@ -302,17 +415,17 @@ function SwipeRow({
             alignItems: "center",
             gap: "12px",
             padding: "15px 20px",
-            background:
-              variant === "circular"
-                ? "rgba(var(--reveal-color), var(--reveal))"
-                : "var(--surface)",
+            background: isCircular
+              ? "rgba(var(--reveal-color), var(--reveal))"
+              : "var(--surface)",
             borderRadius: "16px",
-            overflow: variant === "circular" ? "hidden" : undefined,
+            overflow: isCircular ? "hidden" : undefined,
             scrollSnapAlign: "start",
+            scrollSnapStop: "always",
             touchAction: "pan-x pan-y",
             userSelect: "none",
             _after: {
-              display: variant === "circular" ? "none" : undefined,
+              display: isCircular ? "none" : undefined,
               content: '""',
               position: "absolute",
               left: "82px",
@@ -469,7 +582,7 @@ function SwipeRow({
                     color: chat.muted
                       ? "var(--text-secondary)"
                       : "var(--accent-foreground)",
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: "600",
                   })}
                 >
@@ -494,38 +607,42 @@ function SwipeRow({
           ref={actionsRef}
           className={css({
             display: "flex",
-            flex: variant === "circular" ? "0 0 140px" : "0 0 160px",
+            flex: isCircular ? "0 0 140px" : "0 0 160px",
             alignSelf: "stretch",
             scrollSnapAlign: "end",
-            alignItems: variant === "circular" ? "center" : undefined,
-            gap: variant === "circular" ? "12px" : undefined,
-            padding: variant === "circular" ? "0 14px" : undefined,
+            alignItems: isCircular ? "center" : undefined,
+            gap: isCircular ? "12px" : undefined,
+            padding: isCircular ? "0 14px" : undefined,
             background: "transparent",
           })}
-          inert={!revealed}
+          inert={revealedEdge !== "trailing"}
         >
           <button
             className={css({
               display: "flex",
-              flex: variant === "circular" ? "0 0 50px" : "1",
-              height: variant === "circular" ? "50px" : undefined,
-              borderRadius: variant === "circular" ? "50%" : undefined,
+              flex: isCircular ? "0 0 50px" : "1",
+              height: isCircular ? "50px" : undefined,
+              borderRadius: isCircular ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
               border: "0",
               padding: "0",
               color:
-                variant === "classic" ? "white" : "var(--secondary-action-foreground)",
+                variant === "classic"
+                  ? "white"
+                  : "var(--secondary-action-foreground)",
               background:
                 variant === "classic" ? "#007aff" : "var(--secondary-action)",
-              transform: variant === "circular" ? "scale(0)" : undefined,
+              transform: isCircular ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
                 outlineColor:
-                  variant === "classic" ? "white" : "var(--secondary-action-foreground)",
+                  variant === "classic"
+                    ? "white"
+                    : "var(--secondary-action-foreground)",
               },
             })}
             aria-label={`${chat.muted ? "Unmute" : "Mute"} ${chat.name}`}
@@ -540,16 +657,12 @@ function SwipeRow({
                 flexDirection: "column",
                 alignItems: "center",
                 gap: variant === "classic" ? "7px" : undefined,
-                fontSize: "10px",
+                fontSize: "11px",
                 fontWeight: "550",
-                opacity:
-                  variant === "circular"
-                    ? "1"
-                    : "calc(0.35 + var(--reveal) * 0.65)",
-                transform:
-                  variant === "circular"
-                    ? undefined
-                    : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                opacity: isCircular ? "1" : "calc(0.35 + var(--reveal) * 0.65)",
+                transform: isCircular
+                  ? undefined
+                  : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
                 "@media (prefers-reduced-motion: reduce)": {
                   transform: "none",
                   opacity: "1",
@@ -568,22 +681,25 @@ function SwipeRow({
           <button
             className={css({
               display: "flex",
-              flex: variant === "circular" ? "0 0 50px" : "1",
-              height: variant === "circular" ? "50px" : undefined,
-              borderRadius: variant === "circular" ? "50%" : undefined,
+              flex: isCircular ? "0 0 50px" : "1",
+              height: isCircular ? "50px" : undefined,
+              borderRadius: isCircular ? "50%" : undefined,
               minWidth: "0",
               justifyContent: "center",
               alignItems: "center",
               border: "0",
               padding: "0",
-              color: variant === "classic" ? "white" : "var(--accent-foreground)",
-              background: variant === "classic" ? "#ff3b30" : "var(--accent-solid)",
-              transform: variant === "circular" ? "scale(0)" : undefined,
+              color:
+                variant === "classic" ? "white" : "var(--accent-foreground)",
+              background:
+                variant === "classic" ? "#ff3b30" : "var(--accent-solid)",
+              transform: isCircular ? "scale(0)" : undefined,
               "@media (prefers-reduced-motion: reduce)": { transform: "none" },
               "&:active": { filter: "brightness(0.94)" },
               "&:focus-visible": {
                 outlineOffset: "-4px",
-                outlineColor: variant === "classic" ? "white" : "var(--accent-foreground)",
+                outlineColor:
+                  variant === "classic" ? "white" : "var(--accent-foreground)",
               },
             })}
             aria-label={`Archive ${chat.name}`}
@@ -595,16 +711,12 @@ function SwipeRow({
                 flexDirection: "column",
                 alignItems: "center",
                 gap: variant === "classic" ? "7px" : undefined,
-                fontSize: "10px",
+                fontSize: "11px",
                 fontWeight: "550",
-                opacity:
-                  variant === "circular"
-                    ? "1"
-                    : "calc(0.35 + var(--reveal) * 0.65)",
-                transform:
-                  variant === "circular"
-                    ? undefined
-                    : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
+                opacity: isCircular ? "1" : "calc(0.35 + var(--reveal) * 0.65)",
+                transform: isCircular
+                  ? undefined
+                  : "translateX(calc((1 - var(--reveal)) * 12px)) scale(calc(0.86 + var(--reveal) * 0.14))",
                 "@media (prefers-reduced-motion: reduce)": {
                   transform: "none",
                   opacity: "1",
@@ -625,6 +737,12 @@ function SwipeRow({
 }
 
 function ConversationDemo({ variant }: { variant: ActionVariant }) {
+  const title =
+    variant === "circular-leading"
+      ? "Both edges"
+      : variant === "classic"
+        ? "Classic"
+        : "Circular";
   const [chats, setChats] = useState(() => initialChats.slice(0, 4));
   const [notice, setNotice] = useState<{
     text: string;
@@ -654,9 +772,14 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
   }
 
   function reset() {
-    listRef.current
-      ?.querySelectorAll("[data-chat-id]")
-      .forEach((row) => row.scrollTo({ left: 0, behavior: "instant" }));
+    listRef.current?.querySelectorAll("[data-chat-id]").forEach((row) =>
+      row.scrollTo({
+        left:
+          row.querySelector<HTMLElement>("[data-leading-actions]")
+            ?.offsetWidth ?? 0,
+        behavior: "instant",
+      }),
+    );
     setChats(initialChats.slice(0, 4));
     setNotice(null);
   }
@@ -673,11 +796,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           boxShadow: "var(--card-shadow)",
           "@media (max-width: 520px)": { borderRadius: "16px" },
         })}
-        aria-label={
-          variant === "circular"
-            ? "Circular actions demo"
-            : "Conversation list demo"
-        }
+        aria-label={`${title} swipe actions demo`}
       >
         <header
           className={css({
@@ -701,19 +820,18 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
                 margin: "0",
               })}
             >
-              {`${variant.charAt(0).toUpperCase()}${variant.slice(1)}`}
+              {title}
             </h2>
             <span
               className={css({
                 marginLeft: "auto",
-                fontSize: "10px",
+                fontSize: "11px",
                 color: "var(--text-muted)",
-                "@media (max-width: 520px)": { fontSize: "9px" },
               })}
             >
-              {variant === "circular"
-                ? "Circular actions"
-                : "Demo conversations"}
+              {variant === "circular-leading"
+                ? "Leading + trailing"
+                : "Trailing actions"}
             </span>
           </div>
         </header>
@@ -726,7 +844,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             borderTop: "1px solid var(--separator-color)",
             display: "grid",
             gridTemplateColumns: "minmax(0, auto)",
-            gap: variant === "circular" ? 1 : 0,
+            gap: variant === "classic" ? 0 : 1,
           })}
           ref={listRef}
         >
@@ -736,6 +854,18 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               chat={chat}
               variant={variant}
               onArchive={() => archive(chat)}
+              onToggleRead={() => {
+                setChats((current) =>
+                  current.map((item) =>
+                    item.id === chat.id
+                      ? { ...item, unread: item.unread ? 0 : 1 }
+                      : item,
+                  ),
+                );
+                setNotice({
+                  text: `${chat.name} marked as ${chat.unread ? "read" : "unread"}`,
+                });
+              }}
               onMute={() => {
                 setChats((current) =>
                   current.map((item) =>
@@ -772,9 +902,9 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
             padding: "15px 10px",
             background: "var(--surface-subtle)",
             borderTop: "1px solid var(--separator-color)",
-            fontSize: "9px",
+            fontSize: "11px",
             color: "var(--text-muted)",
-            "@media (max-width: 520px)": { fontSize: "8px", gap: "4px" },
+            "@media (max-width: 520px)": { gap: "4px" },
           })}
         >
           <Icon
@@ -785,13 +915,11 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               marginRight: "2px",
             })}
           />
-          <span>Swipe left for mute & archive</span>
-          <span
-            className={css({ padding: "0 2px", color: "var(--icon-muted)" })}
-          >
-            ·
+          <span>
+            {variant === "circular-leading"
+              ? "Swipe either way to reveal actions"
+              : "Swipe left to reveal actions"}
           </span>
-          <span>Swipe right to close</span>
         </footer>
         {notice && (
           <div
@@ -845,9 +973,9 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           justifyContent: "space-between",
           gap: "12px",
           margin: "17px 3px 0",
-          fontSize: "10px",
+          fontSize: "11px",
           color: "var(--text-muted)",
-          "@media (max-width: 520px)": { fontSize: "9px", gap: "5px" },
+          "@media (max-width: 520px)": { gap: "5px" },
         })}
       >
         <span>Try it with touch or a trackpad.</span>
@@ -860,37 +988,44 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           })}
         >
           <button
-            className={css({
-              padding: "5px 0",
-              border: "0",
-              background: "transparent",
-              fontSize: "10px",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              color: "var(--accent)",
-              "&:hover": { color: "var(--accent-hover)" },
-            })}
-            onClick={() => {
-              const row = listRef.current?.querySelector("[data-chat-id]");
-              row?.scrollTo({
-                left: row.scrollWidth,
-                behavior: scrollBehavior(),
-              });
-            }}
-          >
-            Preview swipe{" "}
-            <Icon
-              name="arrow"
-              className={css({ width: "12px", height: "12px" })}
-            />
+              className={css({
+                padding: "5px 0",
+                border: "0",
+                background: "transparent",
+                fontSize: "11px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                color: "var(--accent)",
+                "&:hover": { color: "var(--accent-hover)" },
+              })}
+              onClick={() => {
+                const row = listRef.current?.querySelector("[data-chat-id]");
+                if (!row) return;
+                const leadingWidth =
+                  row.querySelector<HTMLElement>("[data-leading-actions]")
+                    ?.offsetWidth ?? 0;
+                row?.scrollTo({
+                  left:
+                    leadingWidth > 0 && row.scrollLeft >= leadingWidth
+                      ? 0
+                      : row.scrollWidth,
+                  behavior: scrollBehavior(),
+                });
+              }}
+            >
+              Preview swipe{" "}
+              <Icon
+                name="arrow"
+                className={css({ width: "12px", height: "12px" })}
+              />
           </button>
           <button
             className={css({
               padding: "5px 0",
               border: "0",
               background: "transparent",
-              fontSize: "10px",
+              fontSize: "11px",
               color: "var(--text-muted)",
               "&:hover": { color: "var(--accent-hover)" },
             })}
@@ -958,6 +1093,7 @@ function App() {
         })}
       >
         <ConversationDemo variant="circular" />
+        <ConversationDemo variant="circular-leading" />
         <ConversationDemo variant="classic" />
       </div>
 
@@ -968,10 +1104,9 @@ function App() {
           gap: "9px",
           marginTop: "31px",
           color: "var(--text-muted)",
-          fontSize: "8px",
+          fontSize: "11px",
           letterSpacing: "1.15px",
           "@media (max-width: 520px)": {
-            fontSize: "7px",
             gap: "6px",
             letterSpacing: "0.8px",
           },
