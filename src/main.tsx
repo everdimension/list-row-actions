@@ -391,11 +391,13 @@ function SwipeRow({
     };
   }, [variant, isCircular]);
 
-  const close = () =>
+  const close = () => {
     scrollerRef.current?.scrollTo({
       left: leadingActionsRef.current?.offsetWidth ?? 0,
       behavior: scrollBehavior(),
     });
+    scrollerRef.current?.focus({ preventScroll: true });
+  };
 
   return (
     <li className={css({ overflow: "hidden" })}>
@@ -407,10 +409,20 @@ function SwipeRow({
           overscrollBehaviorX: "contain",
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
+          // Chrome automaticlly makes scrollers keyboard-focusable,
+          // so we only improve the style of the outline
+          outlineOffset: -2,
+          borderRadius: isCircular ? 16 : 0,
           "&::-webkit-scrollbar": { display: "none" },
         })}
         ref={scrollerRef}
-        data-chat-id={chat.id}
+        data-action-row={chat.id}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            close();
+          }
+        }}
       >
         {hasLeadingActions && (
           <div
@@ -447,8 +459,8 @@ function SwipeRow({
             padding: "15px 20px",
             background: isCircular
               ? "rgba(var(--reveal-color), var(--reveal))"
-              : "var(--surface)",
-            borderRadius: "16px",
+              : "transparent",
+            borderRadius: isCircular ? "16px" : 0,
             overflow: isCircular ? "hidden" : undefined,
             scrollSnapAlign: "center",
             scrollSnapStop: "always",
@@ -802,7 +814,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
   }
 
   function reset() {
-    listRef.current?.querySelectorAll("[data-chat-id]").forEach((row) =>
+    listRef.current?.querySelectorAll("[data-action-row]").forEach((row) =>
       row.scrollTo({
         left:
           row.querySelector<HTMLElement>("[data-leading-actions]")
@@ -816,6 +828,36 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
 
   return (
     <div>
+      <header
+        className={css({
+          display: "flex",
+          alignItems: "baseline",
+          gap: "10px",
+          margin: "0 3px 11px",
+        })}
+      >
+        <h2
+          className={css({
+            fontSize: "23px",
+            fontWeight: "700",
+            letterSpacing: "-0.8px",
+            margin: "0",
+          })}
+        >
+          {title}
+        </h2>
+        <span
+          className={css({
+            marginLeft: "auto",
+            fontSize: "11px",
+            color: "var(--text-muted)",
+          })}
+        >
+          {variant === "circular-leading"
+            ? "Leading + trailing"
+            : "Trailing actions"}
+        </span>
+      </header>
       <section
         className={css({
           position: "relative",
@@ -824,54 +866,18 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           borderRadius: "19px",
           overflow: "hidden",
           boxShadow: "var(--card-shadow)",
+          "& > ul > li:first-child > [data-action-row]": {
+            borderTopRadius: "17px",
+          },
           "@media (max-width: 520px)": { borderRadius: "16px" },
         })}
         aria-label={`${title} swipe actions demo`}
       >
-        <header
-          className={css({
-            padding: "22px 21px 0",
-            "@media (max-width: 520px)": { padding: "20px 16px 0" },
-          })}
-        >
-          <div
-            className={css({
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "20px",
-            })}
-          >
-            <h2
-              className={css({
-                fontSize: "23px",
-                fontWeight: "700",
-                letterSpacing: "-0.8px",
-                margin: "0",
-              })}
-            >
-              {title}
-            </h2>
-            <span
-              className={css({
-                marginLeft: "auto",
-                fontSize: "11px",
-                color: "var(--text-muted)",
-              })}
-            >
-              {variant === "circular-leading"
-                ? "Leading + trailing"
-                : "Trailing actions"}
-            </span>
-          </div>
-        </header>
-
         <ul
           className={css({
             listStyle: "none",
             padding: "0",
             margin: "0",
-            borderTop: "2px solid var(--separator-color)",
             display: "grid",
             gridTemplateColumns: "minmax(0, auto)",
             gap: variant === "classic" ? 0 : 1,
@@ -1030,7 +1036,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
               "&:hover": { color: "var(--accent-hover)" },
             })}
             onClick={() => {
-              const row = listRef.current?.querySelector("[data-chat-id]");
+              const row = listRef.current?.querySelector("[data-action-row]");
               if (!row) return;
               const leadingWidth =
                 row.querySelector<HTMLElement>("[data-leading-actions]")
@@ -1114,153 +1120,145 @@ function TableRowDemo() {
 
   function reset() {
     listRef.current
-      ?.querySelectorAll<HTMLElement>("[data-release-id]")
+      ?.querySelectorAll<HTMLElement>("[data-action-row]")
       .forEach((row) => row.scrollTo({ left: 0, behavior: "instant" }));
     setItems(initialReleaseItems);
   }
 
   return (
-    <section
-      className={css({
-        position: "relative",
-        background: "var(--surface)",
-        border: "2px solid var(--border-color)",
-        borderRadius: "19px",
-        overflow: "hidden",
-        boxShadow: "var(--card-shadow)",
-        "@media (max-width: 520px)": { borderRadius: "16px" },
-      })}
-      aria-label="Release checklist swipe actions demo"
-    >
+    <div>
       <header
         className={css({
-          padding: "22px 21px 18px",
-          "@media (max-width: 520px)": { padding: "20px 16px 16px" },
+          display: "flex",
+          alignItems: "baseline",
+          margin: "0 3px 11px",
         })}
       >
+        <h2
+          className={css({
+            fontSize: "23px",
+            fontWeight: "700",
+            letterSpacing: "-0.8px",
+            margin: "0",
+          })}
+        >
+          Table rows
+        </h2>
+      </header>
+      <section
+        className={css({
+          position: "relative",
+          background: "var(--surface)",
+          border: "2px solid var(--border-color)",
+          borderRadius: "19px",
+          overflow: "hidden",
+          boxShadow: "var(--card-shadow)",
+          "@media (max-width: 520px)": { borderRadius: "16px" },
+        })}
+        aria-label="Release checklist swipe actions demo"
+      >
         <div
+          className={css({
+            display: "grid",
+            gridTemplateColumns: "minmax(0, auto)",
+          })}
+        >
+          <div
+            className={css({
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) 92px 80px",
+              gap: "12px",
+              padding: "12px 20px",
+              color: "var(--text-muted)",
+              background: "var(--surface-subtle)",
+              borderBottom: "1px solid var(--separator-color)",
+              fontSize: "11px",
+              fontWeight: "600",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              "@media (max-width: 520px)": {
+                padding: "12px 15px",
+                gap: "8px",
+              },
+            })}
+          >
+            <span>Item</span>
+            <span>Status</span>
+            <span>Updated</span>
+          </div>
+          <ul
+            ref={listRef}
+            className={css({
+              listStyle: "none",
+              padding: "0",
+              margin: "0",
+              display: "grid",
+              gap: 1,
+            })}
+          >
+            {items.map((item) => (
+              <ReleaseRow
+                key={item.id}
+                item={item}
+                onArchive={() => {
+                  setItems((current) =>
+                    current.filter((entry) => entry.id !== item.id),
+                  );
+                }}
+              />
+            ))}
+            {items.length === 0 && (
+              <li
+                className={css({
+                  padding: "44px 20px",
+                  textAlign: "center",
+                  color: "var(--text-secondary)",
+                  fontSize: "13px",
+                })}
+              >
+                Everything is archived. Reset to start again.
+              </li>
+            )}
+          </ul>
+        </div>
+        <footer
           className={css({
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-          })}
-        >
-          <h2
-            className={css({
-              fontSize: "23px",
-              fontWeight: "700",
-              letterSpacing: "-0.8px",
-              margin: "0",
-            })}
-          >
-            Table rows
-          </h2>
-          {/*<span
-            className={css({
-              marginLeft: "auto",
-              fontSize: "11px",
-              color: "var(--text-muted)",
-            })}
-          >
-            Table rows
-          </span>*/}
-        </div>
-      </header>
-      <div
-        className={css({
-          display: "grid",
-          gridTemplateColumns: "minmax(0, auto)",
-        })}
-      >
-        <div
-          className={css({
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 92px 80px",
-            gap: "12px",
-            padding: "9px 20px",
-            color: "var(--text-muted)",
+            justifyContent: "center",
+            gap: "6px",
+            padding: "15px 10px",
             background: "var(--surface-subtle)",
             borderTop: "1px solid var(--separator-color)",
-            borderBottom: "1px solid var(--separator-color)",
             fontSize: "11px",
-            fontWeight: "600",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            "@media (max-width: 520px)": { padding: "9px 15px", gap: "8px" },
+            color: "var(--text-muted)",
           })}
         >
-          <span>Item</span>
-          <span>Status</span>
-          <span>Updated</span>
-        </div>
-        <ul
-          ref={listRef}
-          className={css({
-            listStyle: "none",
-            padding: "0",
-            margin: "0",
-            display: "grid",
-            gap: 1,
-          })}
-        >
-          {items.map((item) => (
-            <ReleaseRow
-              key={item.id}
-              item={item}
-              onArchive={() => {
-                setItems((current) =>
-                  current.filter((entry) => entry.id !== item.id),
-                );
-              }}
-            />
-          ))}
-          {items.length === 0 && (
-            <li
-              className={css({
-                padding: "44px 20px",
-                textAlign: "center",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              })}
-            >
-              Everything is archived. Reset to start again.
-            </li>
-          )}
-        </ul>
-      </div>
-      <footer
-        className={css({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "6px",
-          padding: "15px 10px",
-          background: "var(--surface-subtle)",
-          borderTop: "1px solid var(--separator-color)",
-          fontSize: "11px",
-          color: "var(--text-muted)",
-        })}
-      >
-        <Icon
-          name="swipe"
-          className={css({ width: "14px", height: "14px", marginRight: "2px" })}
-        />
-        <span>Swipe a row to reveal actions</span>
-        <button
-          className={css({
-            marginLeft: "8px",
-            border: "0",
-            background: "none",
-            color: "var(--accent)",
-            font: "inherit",
-            cursor: "pointer",
-          })}
-          onClick={reset}
-        >
-          Reset
-        </button>
-      </footer>
-    </section>
+          <Icon
+            name="swipe"
+            className={css({
+              width: "14px",
+              height: "14px",
+              marginRight: "2px",
+            })}
+          />
+          <span>Swipe a row to reveal actions</span>
+          <button
+            className={css({
+              marginLeft: "8px",
+              border: "0",
+              background: "none",
+              color: "var(--accent)",
+              font: "inherit",
+              cursor: "pointer",
+            })}
+            onClick={reset}
+          >
+            Reset
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 
@@ -1318,8 +1316,10 @@ function ReleaseRow({
       animations.forEach((animation) => animation?.cancel());
     };
   }, []);
-  const close = () =>
+  const close = () => {
     scrollerRef.current?.scrollTo({ left: 0, behavior: scrollBehavior() });
+    scrollerRef.current?.focus({ preventScroll: true });
+  };
   const statusColor =
     item.status === "Ready"
       ? "var(--accent)"
@@ -1330,7 +1330,13 @@ function ReleaseRow({
     <li className={css({ overflow: "hidden" })}>
       <div
         ref={scrollerRef}
-        data-release-id={item.id}
+        data-action-row={item.id}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            close();
+          }
+        }}
         className={css({
           "--reveal": "0",
           display: "flex",
@@ -1338,6 +1344,7 @@ function ReleaseRow({
           overscrollBehaviorX: "contain",
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
+          outlineOffset: -1,
           "&::-webkit-scrollbar": { display: "none" },
         })}
       >
