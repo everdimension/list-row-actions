@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { createRoot } from "react-dom/client";
@@ -186,10 +187,62 @@ const prefersReducedMotion = () =>
 const scrollBehavior = (): ScrollBehavior =>
   prefersReducedMotion() ? "instant" : "smooth";
 
-type ActionVariant =
-  | "classic"
-  | "circular"
-  | "circular-leading";
+type ActionVariant = "classic" | "circular" | "circular-leading";
+
+function CircularActionButton({
+  icon,
+  label,
+  onClick,
+  tone = "accent",
+  size = "50px",
+  style,
+}: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  size?: string;
+  tone?: "accent" | "secondary" | "surface";
+  style?: CSSProperties;
+}) {
+  return (
+    <button
+      style={{ ["--size" as string]: size }}
+      className={css({
+        display: "grid",
+        placeItems: "center",
+        flex: "0 0 var(--size)",
+        height: "var(--size)",
+        border: "0",
+        borderRadius: "50%",
+        padding: "0",
+        background:
+          tone === "secondary"
+            ? "var(--secondary-action)"
+            : tone === "surface"
+              ? "var(--surface)"
+              : "var(--accent-solid)",
+        color:
+          tone === "secondary" || tone === "surface"
+            ? "var(--secondary-action-foreground)"
+            : "var(--accent-foreground)",
+        ...style,
+        "@media (prefers-reduced-motion: reduce)": { transform: "none" },
+        "&:active": { filter: "brightness(0.94)" },
+        "&:focus-visible": {
+          outlineOffset: "-4px",
+          outlineColor:
+            tone === "secondary" || tone === "surface"
+              ? "var(--secondary-action-foreground)"
+              : "var(--accent-foreground)",
+        },
+      })}
+      aria-label={label}
+      onClick={onClick}
+    >
+      <Icon name={icon} className={css({ width: "23px", height: "23px" })} />
+    </button>
+  );
+}
 
 /** The browser owns gestures and snapping; enhanced variants add reveal feedback. */
 function SwipeRow({
@@ -372,38 +425,15 @@ function SwipeRow({
             })}
             inert={revealedEdge !== "leading"}
           >
-            <button
-              className={css({
-                display: "grid",
-                placeItems: "center",
-                flex: "0 0 50px",
-                height: "50px",
-                border: "0",
-                borderRadius: "50%",
-                padding: "0",
-                background: "var(--accent-solid)",
-                color: "var(--accent-foreground)",
-                transform: "scale(0)",
-                "@media (prefers-reduced-motion: reduce)": {
-                  transform: "none",
-                },
-                "&:active": { filter: "brightness(0.94)" },
-                "&:focus-visible": {
-                  outlineOffset: "-4px",
-                  outlineColor: "var(--accent-foreground)",
-                },
-              })}
-              aria-label={`Mark ${chat.name} as ${chat.unread ? "read" : "unread"}`}
+            <CircularActionButton
+              icon={chat.unread ? "check" : "mail"}
+              label={`Mark ${chat.name} as ${chat.unread ? "read" : "unread"}`}
+              style={{ transform: "scale(0)" }}
               onClick={() => {
                 onToggleRead();
                 close();
               }}
-            >
-              <Icon
-                name={chat.unread ? "check" : "mail"}
-                className={css({ width: "23px", height: "23px" })}
-              />
-            </button>
+            />
           </div>
         )}
         <div
@@ -420,7 +450,7 @@ function SwipeRow({
               : "var(--surface)",
             borderRadius: "16px",
             overflow: isCircular ? "hidden" : undefined,
-            scrollSnapAlign: "start",
+            scrollSnapAlign: "center",
             scrollSnapStop: "always",
             touchAction: "pan-x pan-y",
             userSelect: "none",
@@ -988,37 +1018,37 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           })}
         >
           <button
-              className={css({
-                padding: "5px 0",
-                border: "0",
-                background: "transparent",
-                fontSize: "11px",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                color: "var(--accent)",
-                "&:hover": { color: "var(--accent-hover)" },
-              })}
-              onClick={() => {
-                const row = listRef.current?.querySelector("[data-chat-id]");
-                if (!row) return;
-                const leadingWidth =
-                  row.querySelector<HTMLElement>("[data-leading-actions]")
-                    ?.offsetWidth ?? 0;
-                row?.scrollTo({
-                  left:
-                    leadingWidth > 0 && row.scrollLeft >= leadingWidth
-                      ? 0
-                      : row.scrollWidth,
-                  behavior: scrollBehavior(),
-                });
-              }}
-            >
-              Preview swipe{" "}
-              <Icon
-                name="arrow"
-                className={css({ width: "12px", height: "12px" })}
-              />
+            className={css({
+              padding: "5px 0",
+              border: "0",
+              background: "transparent",
+              fontSize: "11px",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              color: "var(--accent)",
+              "&:hover": { color: "var(--accent-hover)" },
+            })}
+            onClick={() => {
+              const row = listRef.current?.querySelector("[data-chat-id]");
+              if (!row) return;
+              const leadingWidth =
+                row.querySelector<HTMLElement>("[data-leading-actions]")
+                  ?.offsetWidth ?? 0;
+              row?.scrollTo({
+                left:
+                  leadingWidth > 0 && row.scrollLeft >= leadingWidth
+                    ? 0
+                    : row.scrollWidth,
+                behavior: scrollBehavior(),
+              });
+            }}
+          >
+            Preview swipe{" "}
+            <Icon
+              name="arrow"
+              className={css({ width: "12px", height: "12px" })}
+            />
           </button>
           <button
             className={css({
@@ -1036,6 +1066,382 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
         </div>
       </div>
     </div>
+  );
+}
+
+type ReleaseItem = {
+  id: number;
+  name: string;
+  platform: string;
+  status: "Ready" | "Testing" | "Blocked" | "Review";
+  updated: string;
+};
+
+const initialReleaseItems: ReleaseItem[] = [
+  {
+    id: 1,
+    name: "Steam Deck build",
+    platform: "Steam",
+    status: "Testing",
+    updated: "12:18",
+  },
+  {
+    id: 2,
+    name: "Windows build",
+    platform: "PC",
+    status: "Ready",
+    updated: "12:42",
+  },
+  {
+    id: 3,
+    name: "Localization",
+    platform: "All platforms",
+    status: "Blocked",
+    updated: "11:56",
+  },
+  {
+    id: 4,
+    name: "Store assets",
+    platform: "Steam",
+    status: "Review",
+    updated: "Yesterday",
+  },
+];
+
+function TableRowDemo() {
+  const [items, setItems] = useState(initialReleaseItems);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  function reset() {
+    listRef.current
+      ?.querySelectorAll<HTMLElement>("[data-release-id]")
+      .forEach((row) => row.scrollTo({ left: 0, behavior: "instant" }));
+    setItems(initialReleaseItems);
+  }
+
+  return (
+    <section
+      className={css({
+        position: "relative",
+        background: "var(--surface)",
+        border: "1px solid var(--border-color)",
+        borderRadius: "19px",
+        overflow: "hidden",
+        boxShadow: "var(--card-shadow)",
+        "@media (max-width: 520px)": { borderRadius: "16px" },
+      })}
+      aria-label="Release checklist swipe actions demo"
+    >
+      <header
+        className={css({
+          padding: "22px 21px 18px",
+          "@media (max-width: 520px)": { padding: "20px 16px 16px" },
+        })}
+      >
+        <div
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          })}
+        >
+          <h2
+            className={css({
+              fontSize: "23px",
+              fontWeight: "700",
+              letterSpacing: "-0.8px",
+              margin: "0",
+            })}
+          >
+            Table rows
+          </h2>
+          {/*<span
+            className={css({
+              marginLeft: "auto",
+              fontSize: "11px",
+              color: "var(--text-muted)",
+            })}
+          >
+            Table rows
+          </span>*/}
+        </div>
+      </header>
+      <div
+        className={css({
+          display: "grid",
+          gridTemplateColumns: "minmax(0, auto)",
+        })}
+      >
+        <div
+          className={css({
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 92px 80px",
+            gap: "12px",
+            padding: "9px 20px",
+            color: "var(--text-muted)",
+            background: "var(--surface-subtle)",
+            borderTop: "1px solid var(--separator-color)",
+            borderBottom: "1px solid var(--separator-color)",
+            fontSize: "11px",
+            fontWeight: "600",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            "@media (max-width: 520px)": { padding: "9px 15px", gap: "8px" },
+          })}
+        >
+          <span>Item</span>
+          <span>Status</span>
+          <span>Updated</span>
+        </div>
+        <ul
+          ref={listRef}
+          className={css({
+            listStyle: "none",
+            padding: "0",
+            margin: "0",
+            display: "grid",
+            gap: 1,
+          })}
+        >
+          {items.map((item) => (
+            <ReleaseRow
+              key={item.id}
+              item={item}
+              onArchive={() => {
+                setItems((current) =>
+                  current.filter((entry) => entry.id !== item.id),
+                );
+              }}
+            />
+          ))}
+          {items.length === 0 && (
+            <li
+              className={css({
+                padding: "44px 20px",
+                textAlign: "center",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              })}
+            >
+              Everything is archived. Reset to start again.
+            </li>
+          )}
+        </ul>
+      </div>
+      <footer
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          padding: "15px 10px",
+          background: "var(--surface-subtle)",
+          borderTop: "1px solid var(--separator-color)",
+          fontSize: "11px",
+          color: "var(--text-muted)",
+        })}
+      >
+        <Icon
+          name="swipe"
+          className={css({ width: "14px", height: "14px", marginRight: "2px" })}
+        />
+        <span>Swipe a row to reveal actions</span>
+        <button
+          className={css({
+            marginLeft: "8px",
+            border: "0",
+            background: "none",
+            color: "var(--accent)",
+            font: "inherit",
+            cursor: "pointer",
+          })}
+          onClick={reset}
+        >
+          Reset
+        </button>
+      </footer>
+    </section>
+  );
+}
+
+function ReleaseRow({
+  item,
+  onArchive,
+}: {
+  item: ReleaseItem;
+  onArchive: () => void;
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current!;
+    const actions = actionsRef.current!;
+    const buttons = actions.querySelectorAll("button");
+    const animations: (Animation | undefined)[] = [];
+    let frame = 0;
+    const update = () => {
+      const progress = Math.min(1, scroller.scrollLeft / actions.offsetWidth);
+      scroller.style.setProperty("--reveal", String(progress));
+      setRevealed(progress > 0.05);
+      buttons.forEach((button, index) => {
+        const threshold = index === 0 ? 0.4 : 0.8;
+        if (progress <= 0.01) {
+          animations[index]?.cancel();
+          animations[index] = undefined;
+        } else if (
+          progress >= threshold &&
+          !animations[index] &&
+          !prefersReducedMotion()
+        ) {
+          animations[index] = button.animate(
+            [
+              { transform: "scale(0)", offset: 0, easing: "ease-out" },
+              { transform: "scale(1.07)", offset: 0.4, easing: "ease-in-out" },
+              { transform: "scale(0.99)", offset: 0.75, easing: "ease-in-out" },
+              { transform: "scale(1)", offset: 1 },
+            ],
+            { duration: 581, fill: "both" },
+          );
+        }
+      });
+      frame = 0;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    return () => {
+      cancelAnimationFrame(frame);
+      scroller.removeEventListener("scroll", onScroll);
+      animations.forEach((animation) => animation?.cancel());
+    };
+  }, []);
+  const close = () =>
+    scrollerRef.current?.scrollTo({ left: 0, behavior: scrollBehavior() });
+  const statusColor =
+    item.status === "Ready"
+      ? "var(--accent)"
+      : item.status === "Blocked"
+        ? "var(--text-secondary)"
+        : "var(--text-muted)";
+  return (
+    <li className={css({ overflow: "hidden" })}>
+      <div
+        ref={scrollerRef}
+        data-release-id={item.id}
+        className={css({
+          "--reveal": "0",
+          display: "flex",
+          overflowX: "auto",
+          overscrollBehaviorX: "contain",
+          scrollSnapType: "x mandatory",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        })}
+      >
+        <div
+          className={css({
+            flex: "0 0 100%",
+            minWidth: "0",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 92px 80px",
+            gap: "12px",
+            alignItems: "center",
+            padding: "16px 20px",
+            // background: "rgba(var(--reveal-color), 0)",
+            scrollSnapAlign: "start",
+            "@media (max-width: 520px)": {
+              gridTemplateColumns: "minmax(0, 1fr) 92px 80px",
+              gap: "8px",
+              padding: "15px",
+            },
+          })}
+          onClick={close}
+        >
+          <span
+            className={css({
+              minWidth: "0",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontSize: "13px",
+              fontWeight: "600",
+            })}
+          >
+            {item.name}
+            <small
+              className={css({
+                display: "block",
+                marginTop: "4px",
+                color: "var(--text-secondary)",
+                fontSize: "11px",
+                fontWeight: "400",
+              })}
+            >
+              {item.platform}
+            </small>
+          </span>
+          <span
+            className={css({
+              color: statusColor,
+              fontSize: "11px",
+              fontWeight: "600",
+            })}
+          >
+            {item.status}
+          </span>
+          <time
+            className={css({
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              whiteSpace: "nowrap",
+            })}
+          >
+            {item.updated}
+          </time>
+        </div>
+        <div
+          ref={actionsRef}
+          className={css({
+            display: "flex",
+            // flex: "0 0 130px",
+            scrollSnapAlign: "end",
+            paddingInlineEnd: 10,
+          })}
+          inert={!revealed}
+        >
+          <div
+            className={css({
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "10px",
+              background: "rgba(var(--reveal-color), var(--reveal))",
+              borderRadius: "1000px",
+              alignSelf: "center",
+            })}
+          >
+            <CircularActionButton
+              size="40px"
+              icon="check"
+              tone="surface"
+              label={`Mark ${item.name} ready`}
+              style={{ transform: "scale(0)" }}
+              onClick={close}
+            />
+            <CircularActionButton
+              size="40px"
+              icon="archive"
+              label={`Archive ${item.name}`}
+              style={{ transform: "scale(0)" }}
+              onClick={onArchive}
+            />
+          </div>
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -1094,6 +1500,7 @@ function App() {
       >
         <ConversationDemo variant="circular" />
         <ConversationDemo variant="circular-leading" />
+        <TableRowDemo />
         <ConversationDemo variant="classic" />
       </div>
 
