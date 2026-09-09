@@ -5,19 +5,19 @@
 @layer tokens {
   :root {
     color-scheme: light dark;
-    --page-bg: #f1f3f4;
+    --page-bg: white;
     --text-color: #202124;
-    --text-secondary: #5f6368;
-    --text-muted: #70757a;
-    --icon-muted: #9aa0a6;
+    --text-secondary: #606367;
+    --text-muted: #767a80;
+    --icon-muted: #9a9fa6;
     --surface: white;
-    --surface-subtle: #f8f9fa;
-    --border-color: #dadce0;
-    --separator-color: #e8eaed;
-    --row-separator-color: #e8eaed;
-    --reveal-color: 241, 243, 244;
-    --control-bg: #f1f3f4;
-    --count-bg: #e8eaed;
+    --surface-subtle: #fafafa;
+    --border-color: #e2e3e5;
+    --separator-color: #eeeff1;
+    --row-separator-color: #eeeff1;
+    --reveal-color: 243, 244, 245;
+    --control-bg: #f3f4f5;
+    --count-bg: #e9ebee;
     --count-active-bg: #e8f0fe;
     --accent: #1967d2;
     --accent-hover: #174ea6;
@@ -27,7 +27,7 @@
     --secondary-action-foreground: #1967d2;
     --online: #34a853;
     --focus-ring: #1967d240;
-    --card-shadow: 0 1px 3px #2021240a;
+    --card-shadow: none;
     --toast-bg: #303134;
     --toast-link: #93b3f2;
     --avatar-bg: #f3f6fa;
@@ -55,7 +55,7 @@
       --icon-muted: #80868b;
       --surface: #202124;
       --surface-subtle: #202124;
-      --border-color: #5f6368;
+      --border-color: #45484c;
       --separator-color: #3c4043;
       --row-separator-color: #3c4043;
       --reveal-color: 48, 49, 52;
