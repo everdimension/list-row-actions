@@ -1008,7 +1008,7 @@ function ConversationDemo({ variant }: { variant: ActionVariant }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          margin: "17px 3px 0",
+          margin: "6px 3px 0",
           fontSize: "11px",
           color: "var(--text-muted)",
           "@media (max-width: 520px)": { gap: "5px" },
